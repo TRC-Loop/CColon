@@ -1,0 +1,21 @@
+/* This is a multiline comment
+   It should be ignored by the tokenizer and parser
+*/
+import console
+
+function main() {
+  var string name = "TRC-Loop" // defining a Variable
+  console.println(name + ", welcome to c:")
+  var int age = console.scanp("Age: ") // Scan with Prompt (User input)
+  console.println(age.tostring())
+  console.println("Let's do Math!")
+  var int test = 4 + 3 - (2+2) * 4
+  console.println(test.tostring()) // should print the correct math result
+  var int n = 5
+  var int i = 5
+  if (n == i) {
+    console.println("n and i are equal!")
+  } else {
+    console.println("n and i are NOT equal!")
+  }
+}
