@@ -1,0 +1,9 @@
+function add(int num1, int num2) {
+  return num1 + num2
+}
+
+function main() {
+  var string name = "Arne"
+  console.println(name)
+  console.println(add(5, 8).tostring())
+}

@@ -1,0 +1,196 @@
+/* demo.ccl
+   Demonstrates all current CColon features.
+*/
+import console
+
+// Functions with parameters and return values
+function add(int a, int b) int {
+    return a + b
+}
+
+function greet(string name) {
+    console.println("Hello, " + name + "!")
+}
+
+function factorial(int n) int {
+    if (n <= 1) {
+        return 1
+    }
+    return n * factorial(n - 1)
+}
+
+function fizzbuzz(int max) {
+    for i in range(1, max + 1) {
+        if (i % 15 == 0) {
+            console.println("FizzBuzz")
+        } else {
+            if (i % 3 == 0) {
+                console.println("Fizz")
+            } else {
+                if (i % 5 == 0) {
+                    console.println("Buzz")
+                } else {
+                    console.println(i.tostring())
+                }
+            }
+        }
+    }
+}
+
+function main() {
+    // --- Variables and types ---
+    var string name = "CColon"
+    var int year = 2026
+    var float pi = 3.14159
+    var bool active = true
+
+    console.println("=== Welcome to " + name + " ===")
+    console.println("Year: " + year.tostring())
+    console.println("Pi: " + pi.tostring())
+    console.println("Active: " + active.tostring())
+    console.println("")
+
+    // --- Arithmetic ---
+    var int math = 4 + 3 - (2 + 2) * 4
+    console.println("4 + 3 - (2+2) * 4 = " + math.tostring())
+
+    var float result = 10.0 / 3.0
+    console.println("10.0 / 3.0 = " + result.tostring())
+
+    var int remainder = 17 % 5
+    console.println("17 % 5 = " + remainder.tostring())
+    console.println("")
+
+    // --- String operations ---
+    var string greeting = "Hello" + ", " + "World!"
+    console.println(greeting)
+    console.println("Length of greeting: " + greeting.length().tostring())
+    console.println("")
+
+    // --- Function calls ---
+    var int sum = add(10, 20)
+    console.println("add(10, 20) = " + sum.tostring())
+    greet("World")
+    console.println("factorial(6) = " + factorial(6).tostring())
+    console.println("")
+
+    // --- Comparisons and if/else ---
+    var int x = 10
+    var int y = 20
+    if (x < y) {
+        console.println("x < y: true")
+    } else {
+        console.println("x < y: false")
+    }
+
+    if (x == 10 and y == 20) {
+        console.println("x is 10 AND y is 20")
+    }
+
+    if (x == 99 or y == 20) {
+        console.println("x is 99 OR y is 20 (at least one is true)")
+    }
+
+    if (not active) {
+        console.println("not active")
+    } else {
+        console.println("active is true")
+    }
+    console.println("")
+
+    // --- While loop ---
+    console.println("While loop counting to 5:")
+    var int count = 0
+    while (count < 5) {
+        console.print("  " + count.tostring())
+        count = count + 1
+    }
+    console.println("")
+    console.println("")
+
+    // --- For loop with range ---
+    console.println("For loop with range(5):")
+    for i in range(5) {
+        console.print("  " + i.tostring())
+    }
+    console.println("")
+
+    console.println("For loop with range(2, 7):")
+    for i in range(2, 7) {
+        console.print("  " + i.tostring())
+    }
+    console.println("")
+    console.println("")
+
+    // --- Lists (dynamic) ---
+    console.println("Lists:")
+    var list numbers = [10, 20, 30]
+    console.println("  initial: " + numbers.tostring())
+    numbers.append(40)
+    console.println("  after append(40): " + numbers.tostring())
+    console.println("  length: " + numbers.length().tostring())
+    console.println("  numbers[0]: " + numbers[0].tostring())
+    console.println("  numbers[3]: " + numbers[3].tostring())
+
+    numbers[1] = 99
+    console.println("  after numbers[1]=99: " + numbers.tostring())
+
+    var list mixed = ["hello", 42, true, 3.14]
+    console.println("  mixed list: " + mixed.tostring())
+    console.println("")
+
+    // --- Fixed arrays ---
+    console.println("Fixed arrays:")
+    var array coords = fixed([100, 200, 300])
+    console.println("  coords: " + coords.tostring())
+    console.println("  coords[1]: " + coords[1].tostring())
+    console.println("  length: " + coords.length().tostring())
+    coords[0] = 999
+    console.println("  after coords[0]=999: " + coords.tostring())
+    console.println("")
+
+    // --- Iterating over a list ---
+    console.println("Iterating over a list:")
+    var list fruits = ["apple", "banana", "cherry"]
+    for fruit in fruits {
+        console.println("  " + fruit)
+    }
+    console.println("")
+
+    // --- Break and continue ---
+    console.println("Break at 3:")
+    for i in range(10) {
+        if (i == 3) {
+            break
+        }
+        console.print("  " + i.tostring())
+    }
+    console.println("")
+
+    console.println("Continue (skip evens):")
+    for i in range(6) {
+        if (i % 2 == 0) {
+            continue
+        }
+        console.print("  " + i.tostring())
+    }
+    console.println("")
+    console.println("")
+
+    // --- Nested functions and recursion ---
+    console.println("FizzBuzz 1-15:")
+    fizzbuzz(15)
+    console.println("")
+
+    // --- Type conversions ---
+    var string numStr = "42"
+    var int parsed = numStr.toint()
+    console.println("Parsed '" + numStr + "' to int: " + parsed.tostring())
+
+    var int n = 7
+    var float nf = n.tofloat()
+    console.println("7 as float: " + nf.tostring())
+
+    console.println("")
+    console.println("=== Demo complete ===")
+}

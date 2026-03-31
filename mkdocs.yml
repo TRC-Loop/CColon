@@ -1,0 +1,59 @@
+site_name: CColon Documentation
+site_url: https://ccolon.arne.sh/
+repo_url: https://github.com/TRC-Loop/CColon
+repo_name: TRC-Loop/CColon
+
+theme:
+  name: material
+  logo: assets/ccolon.svg
+  favicon: assets/ccolon.svg
+  palette:
+    - scheme: slate
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+    - scheme: default
+      primary: deep purple
+      accent: purple
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+  features:
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - content.code.copy
+    - search.suggest
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - Installation: getting-started/installation.md
+    - Hello World: getting-started/hello-world.md
+    - Interactive Shell: getting-started/repl.md
+  - Language Reference:
+    - Variables and Types: reference/variables.md
+    - Operators: reference/operators.md
+    - Control Flow: reference/control-flow.md
+    - Functions: reference/functions.md
+    - Lists and Arrays: reference/collections.md
+    - Methods on Values: reference/methods.md
+    - Imports and Modules: reference/imports.md
+    - Comments: reference/comments.md
+  - Standard Library:
+    - console: stdlib/console.md
+  - Examples: examples.md
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - admonition
+  - pymdownx.details
+  - attr_list
+  - md_in_html
+  - tables
