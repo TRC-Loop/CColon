@@ -182,3 +182,9 @@ For the full language reference, see the [documentation](https://ccolon.arne.sh/
 ## License
 
 [AGPL-3.0](LICENSE)
+
+## Logo
+
+You might want to rotate the logo by 90°.
+
+This is a happy language indeed.
