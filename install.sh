@@ -29,9 +29,9 @@ echo "Detecting system: ${OS}/${ARCH}"
 if [ -n "$1" ]; then
     VERSION="$1"
 else
-    VERSION=$(curl -sI "https://github.com/${REPO}/releases/latest" | grep -i "location:" | sed 's/.*tag\///' | tr -d '\r\n')
+    VERSION=$(curl -s "https://api.github.com/repos/${REPO}/releases/latest" | grep '"tag_name"' | sed 's/.*"tag_name": *"//;s/".*//')
     if [ -z "$VERSION" ]; then
-        echo "Failed to determine latest version. You can specify a version: ./install.sh v0.1.0"
+        echo "No releases found. You can specify a version: ./install.sh v0.1.0"
         exit 1
     fi
 fi
