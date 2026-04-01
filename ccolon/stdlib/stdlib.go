@@ -13,6 +13,9 @@ func NewRegistry() *Registry {
 	r.Register("random", NewRandomModule())
 	r.Register("json", NewJsonModule())
 	r.Register("fs", NewFsModule())
+	r.Register("datetime", NewDatetimeModule())
+	r.Register("os", NewOsModule())
+	r.Register("http", NewHttpModule())
 	return r
 }
 
