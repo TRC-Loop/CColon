@@ -13,14 +13,14 @@ import (
 	"github.com/TRC-Loop/ccolon/vm"
 )
 
-const version = "0.1.0"
+const version = "0.2.1"
 
 func main() {
 	if len(os.Args) < 2 {
 		machine := vm.New()
 		stdlib.NewRegistry().RegisterAll(machine)
 		machine.RegisterBuiltinError()
-		repl.Start(os.Stdin, os.Stdout, machine)
+		repl.Start(os.Stdin, os.Stdout, machine, version)
 		return
 	}
 

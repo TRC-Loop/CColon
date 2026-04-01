@@ -181,7 +181,7 @@ For the full language reference, see the [documentation](https://ccolon.arne.sh/
 
 ## License
 
-[AGPL-3.0](LICENSE)
+[MIT](LICENSE)
 
 ## Logo
 

@@ -15,9 +15,9 @@ import (
 const prompt = "c: > "
 const continuePrompt = "...  "
 
-func Start(in io.Reader, out io.Writer, machine *vm.VM) {
+func Start(in io.Reader, out io.Writer, machine *vm.VM, version string) {
 	scanner := bufio.NewScanner(in)
-	fmt.Fprintf(out, "CColon v0.1.0 - Interactive Mode\n")
+	fmt.Fprintf(out, "CColon v%s - Interactive Mode\n", version)
 	fmt.Fprintf(out, "Type 'exit' to quit.\n\n")
 
 	for {
