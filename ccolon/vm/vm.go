@@ -4,10 +4,29 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"math"
 	"strings"
 
 	"github.com/TRC-Loop/ccolon/compiler"
 )
+
+func addOverflows(a, b int64) bool {
+	r := a + b
+	return (a > 0 && b > 0 && r < 0) || (a < 0 && b < 0 && r > 0)
+}
+
+func subOverflows(a, b int64) bool {
+	r := a - b
+	return (a > 0 && b < 0 && r < 0) || (a < 0 && b > 0 && r > 0)
+}
+
+func mulOverflows(a, b int64) bool {
+	if a == 0 || b == 0 {
+		return false
+	}
+	r := a * b
+	return r/a != b
+}
 
 type CallFrame struct {
 	function *compiler.FuncObject
@@ -145,7 +164,10 @@ func (vm *VM) execute() error {
 			a := vm.pop()
 			result, err := vm.opAdd(a, b)
 			if err != nil {
-				return err
+				if e := vm.tryThrowError(err); e != nil {
+					return e
+				}
+				continue
 			}
 			vm.push(result)
 
@@ -154,7 +176,10 @@ func (vm *VM) execute() error {
 			a := vm.pop()
 			result, err := vm.opArith(a, b, "-")
 			if err != nil {
-				return err
+				if e := vm.tryThrowError(err); e != nil {
+					return e
+				}
+				continue
 			}
 			vm.push(result)
 
@@ -163,7 +188,10 @@ func (vm *VM) execute() error {
 			a := vm.pop()
 			result, err := vm.opArith(a, b, "*")
 			if err != nil {
-				return err
+				if e := vm.tryThrowError(err); e != nil {
+					return e
+				}
+				continue
 			}
 			vm.push(result)
 
@@ -172,7 +200,10 @@ func (vm *VM) execute() error {
 			a := vm.pop()
 			result, err := vm.opDiv(a, b)
 			if err != nil {
-				return err
+				if e := vm.tryThrowError(err); e != nil {
+					return e
+				}
+				continue
 			}
 			vm.push(result)
 
@@ -181,7 +212,10 @@ func (vm *VM) execute() error {
 			a := vm.pop()
 			result, err := vm.opMod(a, b)
 			if err != nil {
-				return err
+				if e := vm.tryThrowError(err); e != nil {
+					return e
+				}
+				continue
 			}
 			vm.push(result)
 
@@ -189,6 +223,12 @@ func (vm *VM) execute() error {
 			v := vm.pop()
 			switch val := v.(type) {
 			case *IntValue:
+				if val.Val == math.MinInt64 {
+					if e := vm.tryThrowError(vm.runtimeError("integer overflow")); e != nil {
+						return e
+					}
+					continue
+				}
 				vm.push(&IntValue{Val: -val.Val})
 			case *FloatValue:
 				vm.push(&FloatValue{Val: -val.Val})
@@ -687,6 +727,9 @@ func (vm *VM) opAdd(a, b Value) (Value, error) {
 	case *IntValue:
 		switch bv := b.(type) {
 		case *IntValue:
+			if addOverflows(av.Val, bv.Val) {
+				return nil, vm.runtimeError("integer overflow")
+			}
 			return &IntValue{Val: av.Val + bv.Val}, nil
 		case *FloatValue:
 			return &FloatValue{Val: float64(av.Val) + bv.Val}, nil
@@ -713,8 +756,14 @@ func (vm *VM) opArith(a, b Value, op string) (Value, error) {
 		case *IntValue:
 			switch op {
 			case "-":
+				if subOverflows(av.Val, bv.Val) {
+					return nil, vm.runtimeError("integer overflow")
+				}
 				return &IntValue{Val: av.Val - bv.Val}, nil
 			case "*":
+				if mulOverflows(av.Val, bv.Val) {
+					return nil, vm.runtimeError("integer overflow")
+				}
 				return &IntValue{Val: av.Val * bv.Val}, nil
 			}
 		case *FloatValue:
@@ -1120,6 +1169,10 @@ func (vm *VM) fileMethod(f *FileValue, method string, args []Value) (Value, erro
 	}
 	switch method {
 	case "read":
+		if f.Scanner != nil {
+			f.File.Seek(0, io.SeekStart)
+			f.Scanner = nil
+		}
 		data, err := io.ReadAll(f.File)
 		if err != nil {
 			return nil, vm.runtimeError("file.read() failed: %s", err.Error())
@@ -1134,6 +1187,10 @@ func (vm *VM) fileMethod(f *FileValue, method string, args []Value) (Value, erro
 		}
 		return &NilValue{}, nil
 	case "readlines":
+		if f.Scanner != nil {
+			f.File.Seek(0, io.SeekStart)
+			f.Scanner = nil
+		}
 		data, err := io.ReadAll(f.File)
 		if err != nil {
 			return nil, vm.runtimeError("file.readlines() failed: %s", err.Error())
@@ -1225,6 +1282,68 @@ func (vm *VM) wrapClassDef(def *compiler.ClassDef) *ClassValue {
 		MaxArity:  def.MaxArity,
 		InitDefs:  def.InitDefs,
 	}
+}
+
+// tryThrowError attempts to throw a Go error through the CColon exception
+// handler stack. If there are active handlers, it creates an Error instance
+// and throws it (returns nil on success). If no handlers, returns the original error.
+func (vm *VM) tryThrowError(goErr error) error {
+	if len(vm.handlers) == 0 {
+		return goErr
+	}
+	msg := goErr.Error()
+	// strip "runtime error at line N: " prefix if present
+	if idx := strings.Index(msg, ": "); idx != -1 && strings.HasPrefix(msg, "runtime error") {
+		msg = msg[idx+2:]
+	}
+	errorClass, ok := vm.globals["Error"].(*ClassValue)
+	if !ok {
+		return goErr
+	}
+	inst := &InstanceValue{
+		Class:  errorClass,
+		Fields: make(map[string]Value),
+	}
+	for name, fd := range errorClass.Fields {
+		if fd.Default != nil {
+			inst.Fields[name] = fd.Default
+		} else {
+			inst.Fields[name] = &NilValue{}
+		}
+	}
+	inst.Fields["message"] = &StringValue{Val: msg}
+	return vm.throwValue(inst)
+}
+
+// throwRuntimeErr creates an Error instance and throws it through the exception
+// handler stack if handlers exist. Otherwise returns a Go error.
+func (vm *VM) throwRuntimeErr(format string, args ...interface{}) error {
+	msg := fmt.Sprintf(format, args...)
+	if len(vm.handlers) > 0 {
+		// create an Error instance
+		errorClass, ok := vm.globals["Error"].(*ClassValue)
+		if ok {
+			inst := &InstanceValue{
+				Class:  errorClass,
+				Fields: make(map[string]Value),
+			}
+			for name, fd := range errorClass.Fields {
+				if fd.Default != nil {
+					inst.Fields[name] = fd.Default
+				} else {
+					inst.Fields[name] = &NilValue{}
+				}
+			}
+			inst.Fields["message"] = &StringValue{Val: msg}
+			return vm.throwValue(inst)
+		}
+	}
+	f := vm.frame()
+	line := 0
+	if f.ip > 0 && f.ip-1 < len(f.function.Lines) {
+		line = f.function.Lines[f.ip-1]
+	}
+	return fmt.Errorf("runtime error at line %d: %s", line, msg)
 }
 
 func (vm *VM) throwValue(thrown Value) error {

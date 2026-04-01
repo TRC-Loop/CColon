@@ -1003,7 +1003,8 @@ func (c *Compiler) compileWith(s *parser.WithStmt) error {
 	// catch handler: close resource and re-throw
 	c.patchJump(tryBegin)
 
-	// the error is on the stack, save it temporarily
+	// the error is on the stack, save it in its own scope
+	c.beginScope()
 	errSlot := c.addLocal("$with_err")
 
 	// call .close()
@@ -1019,7 +1020,9 @@ func (c *Compiler) compileWith(s *parser.WithStmt) error {
 	c.emit(byte(errSlot), s.P.Line)
 	c.emitOp(OP_THROW, s.P.Line)
 
+	c.endScope(s.P.Line) // end error local scope
+
 	c.patchJump(endJump)
-	c.endScope(s.P.Line)
+	c.endScope(s.P.Line) // end resource scope
 	return nil
 }
