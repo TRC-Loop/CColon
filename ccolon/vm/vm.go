@@ -73,6 +73,10 @@ func (vm *VM) RegisterModule(name string, mod *ModuleValue) {
 	vm.modules[name] = mod
 }
 
+func (vm *VM) GetModule(name string) *ModuleValue {
+	return vm.modules[name]
+}
+
 func (vm *VM) push(v Value) {
 	if vm.sp >= len(vm.stack) {
 		vm.stack = append(vm.stack, make([]Value, 256)...)
@@ -1035,6 +1039,108 @@ func (vm *VM) stringMethod(v *StringValue, method string, args []Value) (Value, 
 			return nil, vm.runtimeError("cannot convert '%s' to float", v.Val)
 		}
 		return &FloatValue{Val: f}, nil
+	case "split":
+		sep := ""
+		if len(args) > 0 {
+			s, ok := args[0].(*StringValue)
+			if !ok {
+				return nil, vm.runtimeError("split() separator must be a string")
+			}
+			sep = s.Val
+		}
+		var parts []string
+		if sep == "" {
+			// split on whitespace
+			parts = strings.Fields(v.Val)
+		} else {
+			parts = strings.Split(v.Val, sep)
+		}
+		elems := make([]Value, len(parts))
+		for i, p := range parts {
+			elems[i] = &StringValue{Val: p}
+		}
+		return &ListValue{Elements: elems}, nil
+	case "reverse":
+		runes := []rune(v.Val)
+		for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
+			runes[i], runes[j] = runes[j], runes[i]
+		}
+		return &StringValue{Val: string(runes)}, nil
+	case "upper":
+		return &StringValue{Val: strings.ToUpper(v.Val)}, nil
+	case "lower":
+		return &StringValue{Val: strings.ToLower(v.Val)}, nil
+	case "trim":
+		return &StringValue{Val: strings.TrimSpace(v.Val)}, nil
+	case "contains":
+		if len(args) != 1 {
+			return nil, vm.runtimeError("contains() takes 1 argument")
+		}
+		s, ok := args[0].(*StringValue)
+		if !ok {
+			return nil, vm.runtimeError("contains() argument must be a string")
+		}
+		return &BoolValue{Val: strings.Contains(v.Val, s.Val)}, nil
+	case "startswith":
+		if len(args) != 1 {
+			return nil, vm.runtimeError("startswith() takes 1 argument")
+		}
+		s, ok := args[0].(*StringValue)
+		if !ok {
+			return nil, vm.runtimeError("startswith() argument must be a string")
+		}
+		return &BoolValue{Val: strings.HasPrefix(v.Val, s.Val)}, nil
+	case "endswith":
+		if len(args) != 1 {
+			return nil, vm.runtimeError("endswith() takes 1 argument")
+		}
+		s, ok := args[0].(*StringValue)
+		if !ok {
+			return nil, vm.runtimeError("endswith() argument must be a string")
+		}
+		return &BoolValue{Val: strings.HasSuffix(v.Val, s.Val)}, nil
+	case "replace":
+		if len(args) != 2 {
+			return nil, vm.runtimeError("replace() takes 2 arguments (old, new)")
+		}
+		old, ok1 := args[0].(*StringValue)
+		new_, ok2 := args[1].(*StringValue)
+		if !ok1 || !ok2 {
+			return nil, vm.runtimeError("replace() arguments must be strings")
+		}
+		return &StringValue{Val: strings.ReplaceAll(v.Val, old.Val, new_.Val)}, nil
+	case "index":
+		if len(args) != 1 {
+			return nil, vm.runtimeError("index() takes 1 argument")
+		}
+		s, ok := args[0].(*StringValue)
+		if !ok {
+			return nil, vm.runtimeError("index() argument must be a string")
+		}
+		idx := strings.Index(v.Val, s.Val)
+		return &IntValue{Val: int64(idx)}, nil
+	case "repeat":
+		if len(args) != 1 {
+			return nil, vm.runtimeError("repeat() takes 1 argument")
+		}
+		n, ok := args[0].(*IntValue)
+		if !ok {
+			return nil, vm.runtimeError("repeat() argument must be an int")
+		}
+		return &StringValue{Val: strings.Repeat(v.Val, int(n.Val))}, nil
+	case "join":
+		if len(args) != 1 {
+			return nil, vm.runtimeError("join() takes 1 argument (list)")
+		}
+		lst, ok := args[0].(*ListValue)
+		if !ok {
+			return nil, vm.runtimeError("join() argument must be a list")
+		}
+		parts := make([]string, len(lst.Elements))
+		for i, el := range lst.Elements {
+			parts[i] = el.String()
+		}
+		return &StringValue{Val: strings.Join(parts, v.Val)}, nil
 	default:
 		return nil, vm.runtimeError("string has no method '%s'", method)
 	}

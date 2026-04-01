@@ -1,0 +1,18 @@
+import console
+
+function main() {
+    var string s = "hello world"
+    console.println(s.split(" ").tostring())
+    console.println(s.upper())
+    console.println(s.lower())
+    console.println("  hi  ".trim())
+    console.println(s.contains("world").tostring())
+    console.println(s.startswith("hello").tostring())
+    console.println(s.endswith("world").tostring())
+    console.println(s.replace("world", "there"))
+    console.println(s.reverse())
+    console.println(s.index("world").tostring())
+    console.println("ha".repeat(3))
+    console.println(", ".join(["a", "b", "c"]))
+    console.println("a,b,c".split(",").tostring())
+}

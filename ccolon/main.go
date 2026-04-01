@@ -13,7 +13,7 @@ import (
 	"github.com/TRC-Loop/ccolon/vm"
 )
 
-const version = "0.2.2"
+const version = "0.2.3"
 
 func main() {
 	if len(os.Args) < 2 {

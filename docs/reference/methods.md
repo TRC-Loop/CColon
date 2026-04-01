@@ -32,12 +32,24 @@ Note that `.toint()` truncates toward zero, it does not round.
 
 ## string methods
 
-| Method       | Description                | Returns  |
-|--------------|----------------------------|----------|
-| `.length()`  | Number of characters       | `int`    |
-| `.tostring()` | Returns the string itself  | `string` |
-| `.toint()`   | Parse as integer           | `int`    |
-| `.tofloat()` | Parse as float             | `float`  |
+| Method              | Description                           | Returns  |
+|---------------------|---------------------------------------|----------|
+| `.length()`         | Number of characters                  | `int`    |
+| `.tostring()`       | Returns the string itself             | `string` |
+| `.toint()`          | Parse as integer                      | `int`    |
+| `.tofloat()`        | Parse as float                        | `float`  |
+| `.split(sep)`       | Split by separator (or whitespace if none) | `list` |
+| `.reverse()`        | Reverse the string                    | `string` |
+| `.upper()`          | Convert to uppercase                  | `string` |
+| `.lower()`          | Convert to lowercase                  | `string` |
+| `.trim()`           | Remove leading/trailing whitespace    | `string` |
+| `.contains(sub)`    | Check if substring exists             | `bool`   |
+| `.startswith(pre)`  | Check if string starts with prefix    | `bool`   |
+| `.endswith(suf)`    | Check if string ends with suffix      | `bool`   |
+| `.replace(old, new)`| Replace all occurrences               | `string` |
+| `.index(sub)`       | Index of first occurrence (-1 if none)| `int`    |
+| `.repeat(n)`        | Repeat the string n times             | `string` |
+| `.join(list)`       | Join list elements with this string   | `string` |
 
 ```
 var string s = "hello"
@@ -48,6 +60,16 @@ var int parsed = num.toint()             // 123
 ```
 
 `.toint()` and `.tofloat()` produce a runtime error if the string is not a valid number.
+
+```
+var string s = "hello world"
+console.println(s.split(" ").tostring())        // ["hello", "world"]
+console.println(s.upper())                       // HELLO WORLD
+console.println(s.contains("world").tostring())  // true
+console.println(s.replace("world", "there"))     // hello there
+console.println(s.reverse())                     // dlrow olleh
+console.println(", ".join(["a", "b", "c"]))      // a, b, c
+```
 
 ### String indexing
 

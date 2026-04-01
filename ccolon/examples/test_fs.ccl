@@ -1,0 +1,33 @@
+import console
+import fs
+
+function main() {
+    // test with + readlines
+    console.println("=== readlines ===")
+    with fs.open("examples/data.txt", "r") as f {
+        var list lines = f.readlines()
+        for line in lines {
+            console.println(line)
+        }
+    }
+
+    // test with + readline
+    console.println("=== readline ===")
+    with fs.open("examples/data.txt", "r") as f2 {
+        var string line1 = f2.readline()
+        var string line2 = f2.readline()
+        console.println(line1)
+        console.println(line2)
+    }
+
+    // test with + read
+    console.println("=== read ===")
+    with fs.open("examples/data.txt", "r") as f3 {
+        var string content = f3.read()
+        console.println(content)
+    }
+
+    // test fs.read shortcut
+    console.println("=== fs.read ===")
+    console.println(fs.read("examples/data.txt"))
+}

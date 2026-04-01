@@ -115,7 +115,7 @@ func (p *Parser) parseStatement() (Stmt, error) {
 			if next.Type == lexer.TOKEN_IDENT || next.Type == lexer.TOKEN_LBRACE || next.Type == lexer.TOKEN_LPAREN {
 				// check if it looks like a mistyped keyword
 				lit := p.current().Literal
-				if lit != "true" && lit != "false" && lit != "nil" {
+				if lit != "true" && lit != "false" && lit != "nil" && lit != "None" {
 					suggestions := map[string]string{
 						"func": "function", "fn": "function", "fnction": "function",
 						"funciton": "function", "fucntion": "function",

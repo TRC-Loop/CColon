@@ -588,6 +588,10 @@ func (c *Compiler) compileExpr(expr parser.Expr) error {
 }
 
 func (c *Compiler) compileIdentifier(e *parser.Identifier) error {
+	if e.Name == "nil" || e.Name == "None" {
+		c.emitOp(OP_NIL, e.P.Line)
+		return nil
+	}
 	if slot, ok := c.resolveLocal(e.Name); ok {
 		c.emitOp(OP_LOAD_LOCAL, e.P.Line)
 		c.emit(byte(slot), e.P.Line)
