@@ -90,6 +90,18 @@ See [Lists and Arrays](collections.md) for details.
 
 See [Lists and Arrays](collections.md) for details.
 
+## dict methods
+
+| Method       | Description                          | Returns  |
+|--------------|--------------------------------------|----------|
+| `.keys()`    | List of all keys (insertion order)   | `list`   |
+| `.values()`  | List of all values                   | `list`   |
+| `.has(key)`  | Check if a key exists                | `bool`   |
+| `.length()`  | Number of entries                    | `int`    |
+| `.tostring()` | String representation               | `string` |
+
+See [Dictionaries](dicts.md) for details.
+
 ## Chaining methods
 
 Methods can be chained:

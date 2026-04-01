@@ -1,7 +1,11 @@
 /* demo.ccl
-   Demonstrates all current CColon features.
+   Demonstrates all CColon features.
 */
 import console
+import math
+import random
+import json
+import "utils.ccl"
 
 // Functions with parameters and return values
 function add(int a, int b) int {
@@ -19,21 +23,64 @@ function factorial(int n) int {
     return n * factorial(n - 1)
 }
 
-function fizzbuzz(int max) {
-    for i in range(1, max + 1) {
-        if (i % 15 == 0) {
-            console.println("FizzBuzz")
-        } else {
-            if (i % 3 == 0) {
-                console.println("Fizz")
-            } else {
-                if (i % 5 == 0) {
-                    console.println("Buzz")
-                } else {
-                    console.println(i.tostring())
-                }
-            }
-        }
+// Optional arguments
+function repeat(string text, int times = 1) string {
+    var string result = ""
+    for i in range(times) {
+        result = result + text
+    }
+    return result
+}
+
+// Classes with public/private, inheritance, self, super
+class Animal {
+    var public string name = "unknown"
+    var public int age = 0
+    var private string id = "internal"
+
+    public function init(string name, int age) {
+        self.name = name
+        self.age = age
+    }
+
+    public function speak() string {
+        return self.name + " makes a sound"
+    }
+
+    public function info() string {
+        return self.name + " (age " + self.age.tostring() + ")"
+    }
+}
+
+class Dog extends Animal {
+    var public string breed = "mixed"
+
+    public function init(string name, int age, string breed) {
+        super.init(name, age)
+        self.breed = breed
+    }
+
+    public function speak() string {
+        return self.name + " barks!"
+    }
+}
+
+// Custom error class
+class ValidationError extends Error {
+    var public string field = ""
+
+    public function init(string message, string field) {
+        super.init(message)
+        self.field = field
+    }
+}
+
+function validate_age(int age) {
+    if (age < 0) {
+        throw ValidationError("age cannot be negative", "age")
+    }
+    if (age > 200) {
+        throw ValidationError("age is unrealistic", "age")
     }
 }
 
@@ -51,113 +98,51 @@ function main() {
     console.println("")
 
     // --- Arithmetic ---
-    var int math = 4 + 3 - (2 + 2) * 4
-    console.println("4 + 3 - (2+2) * 4 = " + math.tostring())
-
+    var int m = 4 + 3 - (2 + 2) * 4
+    console.println("4 + 3 - (2+2) * 4 = " + m.tostring())
     var float result = 10.0 / 3.0
     console.println("10.0 / 3.0 = " + result.tostring())
-
-    var int remainder = 17 % 5
-    console.println("17 % 5 = " + remainder.tostring())
+    console.println("17 % 5 = " + (17 % 5).tostring())
     console.println("")
 
-    // --- String operations ---
+    // --- Strings ---
     var string greeting = "Hello" + ", " + "World!"
     console.println(greeting)
-    console.println("Length of greeting: " + greeting.length().tostring())
+    console.println("Length: " + greeting.length().tostring())
     console.println("")
 
     // --- Function calls ---
-    var int sum = add(10, 20)
-    console.println("add(10, 20) = " + sum.tostring())
+    console.println("add(10, 20) = " + add(10, 20).tostring())
     greet("World")
     console.println("factorial(6) = " + factorial(6).tostring())
     console.println("")
 
-    // --- Comparisons and if/else ---
+    // --- Optional arguments ---
+    console.println("repeat('ha', 3) = " + repeat("ha", 3))
+    console.println("repeat('yo') = " + repeat("yo"))
+    console.println("")
+
+    // --- Comparisons and logic ---
     var int x = 10
     var int y = 20
     if (x < y) {
         console.println("x < y: true")
-    } else {
-        console.println("x < y: false")
     }
-
     if (x == 10 and y == 20) {
         console.println("x is 10 AND y is 20")
     }
-
-    if (x == 99 or y == 20) {
-        console.println("x is 99 OR y is 20 (at least one is true)")
-    }
-
-    if (not active) {
-        console.println("not active")
-    } else {
-        console.println("active is true")
+    if (not false) {
+        console.println("not false = true")
     }
     console.println("")
 
-    // --- While loop ---
-    console.println("While loop counting to 5:")
-    var int count = 0
-    while (count < 5) {
-        console.print("  " + count.tostring())
-        count = count + 1
-    }
-    console.println("")
-    console.println("")
-
-    // --- For loop with range ---
+    // --- Loops ---
     console.println("For loop with range(5):")
     for i in range(5) {
         console.print("  " + i.tostring())
     }
     console.println("")
 
-    console.println("For loop with range(2, 7):")
-    for i in range(2, 7) {
-        console.print("  " + i.tostring())
-    }
-    console.println("")
-    console.println("")
-
-    // --- Lists (dynamic) ---
-    console.println("Lists:")
-    var list numbers = [10, 20, 30]
-    console.println("  initial: " + numbers.tostring())
-    numbers.append(40)
-    console.println("  after append(40): " + numbers.tostring())
-    console.println("  length: " + numbers.length().tostring())
-    console.println("  numbers[0]: " + numbers[0].tostring())
-    console.println("  numbers[3]: " + numbers[3].tostring())
-
-    numbers[1] = 99
-    console.println("  after numbers[1]=99: " + numbers.tostring())
-
-    var list mixed = ["hello", 42, true, 3.14]
-    console.println("  mixed list: " + mixed.tostring())
-    console.println("")
-
-    // --- Fixed arrays ---
-    console.println("Fixed arrays:")
-    var array coords = fixed([100, 200, 300])
-    console.println("  coords: " + coords.tostring())
-    console.println("  coords[1]: " + coords[1].tostring())
-    console.println("  length: " + coords.length().tostring())
-    coords[0] = 999
-    console.println("  after coords[0]=999: " + coords.tostring())
-    console.println("")
-
-    // --- Iterating over a list ---
-    console.println("Iterating over a list:")
-    var list fruits = ["apple", "banana", "cherry"]
-    for fruit in fruits {
-        console.println("  " + fruit)
-    }
-    console.println("")
-
-    // --- Break and continue ---
     console.println("Break at 3:")
     for i in range(10) {
         if (i == 3) {
@@ -166,30 +151,110 @@ function main() {
         console.print("  " + i.tostring())
     }
     console.println("")
+    console.println("")
 
-    console.println("Continue (skip evens):")
-    for i in range(6) {
-        if (i % 2 == 0) {
-            continue
-        }
-        console.print("  " + i.tostring())
+    // --- Lists ---
+    var list numbers = [10, 20, 30]
+    numbers.append(40)
+    console.println("List: " + numbers.tostring())
+    console.println("Length: " + numbers.length().tostring())
+    console.println("")
+
+    // --- Fixed arrays ---
+    var array coords = fixed([100, 200, 300])
+    console.println("Array: " + coords.tostring())
+    console.println("")
+
+    // --- Dicts ---
+    console.println("Dicts:")
+    var dict colors = {"red": 1, "green": 2, "blue": 3}
+    console.println("  colors: " + colors.tostring())
+    console.println("  colors[\"red\"]: " + colors["red"].tostring())
+    console.println("  has green: " + colors.has("green").tostring())
+    console.println("  keys: " + colors.keys().tostring())
+    colors["alpha"] = 255
+    console.println("  after adding alpha: " + colors.tostring())
+    console.println("")
+
+    // iterate over dict keys
+    console.println("Dict iteration:")
+    for key in colors {
+        console.println("  " + key + " = " + colors[key].tostring())
     }
     console.println("")
+
+    // --- Classes ---
+    console.println("Classes:")
+    var Animal cat = Animal("Whiskers", 3)
+    console.println("  " + cat.speak())
+    console.println("  " + cat.info())
+
+    var Dog dog = Dog("Rex", 5, "Labrador")
+    console.println("  " + dog.speak())
+    console.println("  " + dog.info())
+    console.println("  breed: " + dog.breed)
     console.println("")
 
-    // --- Nested functions and recursion ---
-    console.println("FizzBuzz 1-15:")
-    fizzbuzz(15)
+    // --- Error handling ---
+    console.println("Error handling:")
+    try {
+        throw Error("something went wrong")
+    } catch (Error e) {
+        console.println("  caught: " + e.message)
+    }
+
+    // Custom error class
+    try {
+        validate_age(-5)
+    } catch (Error e) {
+        console.println("  validation error caught")
+    }
+    console.println("")
+
+    // --- Math module ---
+    console.println("Math module:")
+    console.println("  pi = " + math.pi().tostring())
+    console.println("  e = " + math.e().tostring())
+    console.println("  sqrt(16) = " + math.sqrt(16).tostring())
+    console.println("  abs(-42) = " + math.abs(-42).tostring())
+    console.println("  floor(3.7) = " + math.floor(3.7).tostring())
+    console.println("  ceil(3.2) = " + math.ceil(3.2).tostring())
+    console.println("  pow(2, 10) = " + math.pow(2, 10).tostring())
+    console.println("  min(5, 3) = " + math.min(5, 3).tostring())
+    console.println("  max(5, 3) = " + math.max(5, 3).tostring())
+    console.println("")
+
+    // --- Random module ---
+    console.println("Random module:")
+    console.println("  random int 1-10: " + random.randint(1, 10).tostring())
+    console.println("  random float: " + random.randfloat().tostring())
+    var list items = ["apple", "banana", "cherry"]
+    console.println("  random choice: " + random.choice(items))
+    console.println("  random char from 'abc': " + random.char("abc"))
+    console.println("")
+
+    // --- JSON module ---
+    console.println("JSON module:")
+    var string jsonStr = "{\"name\": \"CColon\", \"version\": 1}"
+    var dict parsed = json.parse(jsonStr)
+    console.println("  parsed: " + parsed.tostring())
+    console.println("  name: " + parsed["name"])
+
+    var dict data = {"lang": "CColon", "year": 2026}
+    console.println("  stringify: " + json.stringify(data))
     console.println("")
 
     // --- Type conversions ---
     var string numStr = "42"
-    var int parsed = numStr.toint()
-    console.println("Parsed '" + numStr + "' to int: " + parsed.tostring())
+    var int p = numStr.toint()
+    console.println("Parsed '42' to int: " + p.tostring())
+    var int seven = 7
+    console.println("7 as float: " + seven.tofloat().tostring())
 
-    var int n = 7
-    var float nf = n.tofloat()
-    console.println("7 as float: " + nf.tostring())
+    // --- File imports ---
+    console.println("File imports:")
+    console.println("  double(21) = " + double(21).tostring())
+    console.println("  square(9) = " + square(9).tostring())
 
     console.println("")
     console.println("=== Demo complete ===")

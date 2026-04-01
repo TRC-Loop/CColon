@@ -49,17 +49,52 @@ const (
 
 	OP_HALT
 
+	OP_GET_FIELD
+	OP_SET_FIELD
+	OP_INHERIT
+
+	OP_DICT_NEW
+
+	OP_TRY_BEGIN
+	OP_TRY_END
+	OP_THROW
+
+	OP_IMPORT_FILE
+
 	OP_BREAK_PLACEHOLDER
 	OP_CONTINUE_PLACEHOLDER
 )
 
 type FuncObject struct {
 	Name       string
-	Arity      int
+	Arity      int           // minimum required args
+	MaxArity   int           // total params including optional
+	Defaults   []interface{} // default values for optional params (nil for required)
 	Code       []byte
 	Constants  []interface{}
 	Lines      []int
 	LocalCount int
+}
+
+type FieldDef struct {
+	Visibility string
+	TypeName   string
+	Default    interface{}
+}
+
+type MethodDef struct {
+	Visibility string
+	Fn         *FuncObject
+}
+
+type ClassDef struct {
+	Name      string
+	SuperName string
+	Fields    map[string]*FieldDef
+	Methods   map[string]*MethodDef
+	InitArity int
+	MaxArity  int
+	InitDefs  []interface{}
 }
 
 var opNames = map[OpCode]string{
@@ -75,6 +110,10 @@ var opNames = map[OpCode]string{
 	OP_INDEX_GET: "INDEX_GET", OP_INDEX_SET: "INDEX_SET",
 	OP_METHOD_CALL: "METHOD_CALL", OP_IMPORT: "IMPORT",
 	OP_POP: "POP", OP_DUP: "DUP", OP_HALT: "HALT",
+	OP_GET_FIELD: "GET_FIELD", OP_SET_FIELD: "SET_FIELD", OP_INHERIT: "INHERIT",
+	OP_DICT_NEW: "DICT_NEW",
+	OP_TRY_BEGIN: "TRY_BEGIN", OP_TRY_END: "TRY_END", OP_THROW: "THROW",
+	OP_IMPORT_FILE: "IMPORT_FILE",
 }
 
 func (op OpCode) String() string {

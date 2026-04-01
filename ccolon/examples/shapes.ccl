@@ -1,0 +1,24 @@
+class Shape {
+    var public string name = "shape"
+
+    public function init(string name) {
+        self.name = name
+    }
+
+    public function area() float {
+        return 0.0
+    }
+}
+
+class Circle extends Shape {
+    var public float radius = 0.0
+
+    public function init(float radius) {
+        super.init("circle")
+        self.radius = radius
+    }
+
+    public function area() float {
+        return 3.14159 * self.radius * self.radius
+    }
+}

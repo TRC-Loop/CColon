@@ -1,0 +1,7 @@
+function double(int x) int {
+    return x * 2
+}
+
+function square(int x) int {
+    return x * x
+}

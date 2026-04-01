@@ -18,27 +18,56 @@ Import statements should be placed at the top of the file, before any function d
 
 ## Available modules
 
-CColon currently ships with one built-in module:
-
 | Module    | Description                              |
 |-----------|------------------------------------------|
 | `console` | Terminal output and user input           |
-
-More standard library modules will be added in future releases.
+| `math`    | Mathematical functions and constants     |
+| `random`  | Random number generation and selection   |
+| `json`    | JSON parsing and serialization           |
+| `fs`      | File system operations                   |
 
 ## How modules work
 
-Modules in CColon are not files. They are built-in packages provided by the runtime. Each module exposes a set of functions that you call through dot notation after importing.
+Modules in CColon are built-in packages provided by the runtime. Each module exposes a set of functions that you call through dot notation after importing.
 
-You must import a module before using it. If you try to use `console.println` without `import console`, you will get a runtime error:
+You must import a module before using it. If you try to use `console.println` without `import console`, you will get a helpful error:
 
 ```
 // this will fail:
 function main() {
-    console.println("oops")    // error: undefined variable 'console'
+    console.println("oops")
+    // error: undefined variable 'console' -- did you forget 'import console'?
 }
 ```
 
-## Future: file imports
+## Importing other CColon files
 
-Support for importing other `.ccl` files as modules is planned for a future release.
+You can import functions and classes from other `.ccl` files using a string path:
+
+```
+import "utils.ccl"
+import "lib/helpers.ccl"
+```
+
+The path is resolved relative to the directory of the file doing the import. All top-level definitions (functions, classes) from the imported file become available in the importing file's global scope.
+
+Each file is imported at most once, even if multiple `import` statements reference it.
+
+### Example
+
+`utils.ccl`:
+```
+function double(int x) int {
+    return x * 2
+}
+```
+
+`main.ccl`:
+```
+import console
+import "utils.ccl"
+
+function main() {
+    console.println(double(5).tostring())    // 10
+}
+```

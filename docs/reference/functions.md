@@ -52,7 +52,26 @@ var int result = add(3, 4)
 greet()
 ```
 
-The number of arguments must match the number of parameters exactly.
+## Optional arguments
+
+Parameters can have default values. Optional parameters must come after all required parameters:
+
+```
+function repeat(string text, int times = 1) string {
+    var string result = ""
+    for i in range(times) {
+        result = result + text
+    }
+    return result
+}
+```
+
+When calling, you can omit optional arguments to use their defaults:
+
+```
+repeat("ha", 3)    // "hahaha"
+repeat("yo")       // "yo" (times defaults to 1)
+```
 
 ## The main function
 

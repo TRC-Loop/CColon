@@ -158,6 +158,14 @@ func (c *Compiler) compileStmt(stmt parser.Stmt) error {
 		return c.compileBreak(s)
 	case *parser.ContinueStmt:
 		return c.compileContinue(s)
+	case *parser.ClassDecl:
+		return c.compileClassDecl(s)
+	case *parser.TryCatchStmt:
+		return c.compileTryCatch(s)
+	case *parser.ThrowStmt:
+		return c.compileThrow(s)
+	case *parser.WithStmt:
+		return c.compileWith(s)
 	default:
 		return fmt.Errorf("unknown statement type %T", stmt)
 	}
@@ -165,7 +173,11 @@ func (c *Compiler) compileStmt(stmt parser.Stmt) error {
 
 func (c *Compiler) compileImport(s *parser.ImportStmt) error {
 	idx := c.addConstant(s.Module)
-	c.emitOp(OP_IMPORT, s.P.Line)
+	if s.IsFile {
+		c.emitOp(OP_IMPORT_FILE, s.P.Line)
+	} else {
+		c.emitOp(OP_IMPORT, s.P.Line)
+	}
 	c.emitUint16(idx, s.P.Line)
 	return nil
 }
@@ -187,10 +199,38 @@ func (c *Compiler) compileVarDecl(s *parser.VarDecl) error {
 }
 
 func (c *Compiler) compileFuncDecl(s *parser.FuncDecl) error {
+	// count required and optional params
+	requiredCount := 0
+	for _, p := range s.Params {
+		if p.Default == nil {
+			requiredCount++
+		}
+	}
+
 	fnCompiler := &Compiler{
-		function:   &FuncObject{Name: s.Name, Arity: len(s.Params)},
+		function:   &FuncObject{Name: s.Name, Arity: requiredCount, MaxArity: len(s.Params)},
 		scopeDepth: 1,
 	}
+
+	// build defaults list
+	defaults := make([]interface{}, len(s.Params))
+	for i, p := range s.Params {
+		if p.Default != nil {
+			switch d := p.Default.(type) {
+			case *parser.IntLiteral:
+				defaults[i] = d.Value
+			case *parser.FloatLiteral:
+				defaults[i] = d.Value
+			case *parser.StringLiteral:
+				defaults[i] = d.Value
+			case *parser.BoolLiteral:
+				defaults[i] = d.Value
+			default:
+				defaults[i] = nil
+			}
+		}
+	}
+	fnCompiler.function.Defaults = defaults
 
 	for _, param := range s.Params {
 		fnCompiler.addLocal(param.Name)
@@ -234,6 +274,8 @@ func (c *Compiler) compileAssign(s *parser.AssignStmt) error {
 		return nil
 	case *parser.IndexExpr:
 		return c.compileIndexAssign(target, s.Value, s.P.Line)
+	case *parser.FieldAccessExpr:
+		return c.compileFieldAssign(target, s.Value, s.P.Line)
 	default:
 		return fmt.Errorf("line %d:%d: invalid assignment target", s.P.Line, s.P.Col)
 	}
@@ -527,6 +569,15 @@ func (c *Compiler) compileExpr(expr parser.Expr) error {
 		return c.compileList(e)
 	case *parser.FixedArrayLiteral:
 		return c.compileFixedArray(e)
+	case *parser.SelfExpr:
+		c.emitOp(OP_LOAD_LOCAL, e.P.Line)
+		c.emit(0, e.P.Line) // self is always slot 0 in methods
+	case *parser.FieldAccessExpr:
+		return c.compileFieldAccess(e)
+	case *parser.SuperCallExpr:
+		return c.compileSuperCall(e)
+	case *parser.DictLiteral:
+		return c.compileDictLiteral(e)
 	case *parser.RangeExpr:
 		// range as an expression (used in for-in, but could be standalone)
 		return fmt.Errorf("line %d:%d: range() can only be used in for loops", e.P.Line, e.P.Col)
@@ -691,5 +742,284 @@ func (c *Compiler) compileFixedArray(e *parser.FixedArrayLiteral) error {
 	}
 	c.emitOp(OP_ARRAY_NEW, e.P.Line)
 	c.emitUint16(len(e.Elements), e.P.Line)
+	return nil
+}
+
+func (c *Compiler) compileFieldAccess(e *parser.FieldAccessExpr) error {
+	if err := c.compileExpr(e.Object); err != nil {
+		return err
+	}
+	idx := c.addConstant(e.Field)
+	c.emitOp(OP_GET_FIELD, e.P.Line)
+	c.emitUint16(idx, e.P.Line)
+	return nil
+}
+
+func (c *Compiler) compileFieldAssign(target *parser.FieldAccessExpr, value parser.Expr, line int) error {
+	if err := c.compileExpr(target.Object); err != nil {
+		return err
+	}
+	if err := c.compileExpr(value); err != nil {
+		return err
+	}
+	idx := c.addConstant(target.Field)
+	c.emitOp(OP_SET_FIELD, line)
+	c.emitUint16(idx, line)
+	return nil
+}
+
+func (c *Compiler) compileSuperCall(e *parser.SuperCallExpr) error {
+	// push self (slot 0)
+	c.emitOp(OP_LOAD_LOCAL, e.P.Line)
+	c.emit(0, e.P.Line)
+	// push args
+	for _, arg := range e.Args {
+		if err := c.compileExpr(arg); err != nil {
+			return err
+		}
+	}
+	// emit as method call with special "$super." prefix so the VM knows to look up the parent
+	methodIdx := c.addConstant("$super." + e.Method)
+	c.emitOp(OP_METHOD_CALL, e.P.Line)
+	c.emitUint16(methodIdx, e.P.Line)
+	c.emit(byte(len(e.Args)), e.P.Line)
+	return nil
+}
+
+func (c *Compiler) compileDictLiteral(e *parser.DictLiteral) error {
+	for i := range e.Keys {
+		if err := c.compileExpr(e.Keys[i]); err != nil {
+			return err
+		}
+		if err := c.compileExpr(e.Values[i]); err != nil {
+			return err
+		}
+	}
+	c.emitOp(OP_DICT_NEW, e.P.Line)
+	c.emitUint16(len(e.Keys), e.P.Line)
+	return nil
+}
+
+func (c *Compiler) compileClassDecl(s *parser.ClassDecl) error {
+	// compile each method as a FuncObject with self as implicit first param
+	methods := make(map[string]*MethodDef)
+	fields := make(map[string]*FieldDef)
+
+	for _, f := range s.Fields {
+		var defaultVal interface{}
+		if f.Default != nil {
+			switch d := f.Default.(type) {
+			case *parser.IntLiteral:
+				defaultVal = d.Value
+			case *parser.FloatLiteral:
+				defaultVal = d.Value
+			case *parser.StringLiteral:
+				defaultVal = d.Value
+			case *parser.BoolLiteral:
+				defaultVal = d.Value
+			}
+		}
+		fields[f.Name] = &FieldDef{
+			Visibility: f.Visibility,
+			TypeName:   f.TypeName,
+			Default:    defaultVal,
+		}
+	}
+
+	initArity := 0
+	initMaxArity := 0
+	var initDefaults []interface{}
+
+	for _, m := range s.Methods {
+		requiredCount := 0
+		for _, p := range m.Params {
+			if p.Default == nil {
+				requiredCount++
+			}
+		}
+
+		fnCompiler := &Compiler{
+			function: &FuncObject{
+				Name:     s.Name + "." + m.Name,
+				Arity:    requiredCount + 1, // +1 for self
+				MaxArity: len(m.Params) + 1, // +1 for self
+			},
+			scopeDepth: 1,
+		}
+
+		// build defaults (first entry nil for self)
+		defaults := make([]interface{}, len(m.Params)+1)
+		for i, p := range m.Params {
+			if p.Default != nil {
+				switch d := p.Default.(type) {
+				case *parser.IntLiteral:
+					defaults[i+1] = d.Value
+				case *parser.FloatLiteral:
+					defaults[i+1] = d.Value
+				case *parser.StringLiteral:
+					defaults[i+1] = d.Value
+				case *parser.BoolLiteral:
+					defaults[i+1] = d.Value
+				}
+			}
+		}
+		fnCompiler.function.Defaults = defaults
+
+		// self is slot 0
+		fnCompiler.addLocal("self")
+		for _, param := range m.Params {
+			fnCompiler.addLocal(param.Name)
+		}
+
+		for _, stmt := range m.Body {
+			if err := fnCompiler.compileStmt(stmt); err != nil {
+				return err
+			}
+		}
+
+		fnCompiler.emitOp(OP_NIL, m.P.Line)
+		fnCompiler.emitOp(OP_RETURN, m.P.Line)
+		fnCompiler.function.LocalCount = len(fnCompiler.locals)
+
+		methods[m.Name] = &MethodDef{
+			Visibility: m.Visibility,
+			Fn:         fnCompiler.function,
+		}
+
+		if m.Name == "init" {
+			initArity = requiredCount
+			initMaxArity = len(m.Params)
+			initDefaults = defaults[1:] // strip self
+		}
+	}
+
+	// store class as constant
+	classConst := &ClassDef{
+		Name:      s.Name,
+		SuperName: s.SuperName,
+		Fields:    fields,
+		Methods:   methods,
+		InitArity: initArity,
+		MaxArity:  initMaxArity,
+		InitDefs:  initDefaults,
+	}
+
+	idx := c.addConstant(classConst)
+	c.emitOp(OP_CONST, s.P.Line)
+	c.emitUint16(idx, s.P.Line)
+
+	// if extends, load the superclass and emit INHERIT
+	if s.SuperName != "" {
+		superIdx := c.addConstant(s.SuperName)
+		c.emitOp(OP_LOAD_GLOBAL, s.P.Line)
+		c.emitUint16(superIdx, s.P.Line)
+		c.emitOp(OP_INHERIT, s.P.Line)
+	}
+
+	nameIdx := c.addConstant(s.Name)
+	c.emitOp(OP_STORE_GLOBAL, s.P.Line)
+	c.emitUint16(nameIdx, s.P.Line)
+	return nil
+}
+
+func (c *Compiler) compileTryCatch(s *parser.TryCatchStmt) error {
+	// emit TRY_BEGIN with placeholder offset to catch handler
+	tryBegin := c.emitJump(OP_TRY_BEGIN, s.P.Line)
+
+	// compile try body
+	c.beginScope()
+	for _, stmt := range s.TryBody {
+		if err := c.compileStmt(stmt); err != nil {
+			return err
+		}
+	}
+	c.endScope(s.P.Line)
+
+	// remove exception handler
+	c.emitOp(OP_TRY_END, s.P.Line)
+
+	// jump over catch body
+	endJump := c.emitJump(OP_JUMP, s.P.Line)
+
+	// patch TRY_BEGIN to point here (catch handler)
+	c.patchJump(tryBegin)
+
+	// the VM will push the error value onto the stack before jumping here
+	c.beginScope()
+	c.addLocal(s.CatchName)
+
+	for _, stmt := range s.CatchBody {
+		if err := c.compileStmt(stmt); err != nil {
+			return err
+		}
+	}
+	c.endScope(s.P.Line)
+
+	c.patchJump(endJump)
+	return nil
+}
+
+func (c *Compiler) compileThrow(s *parser.ThrowStmt) error {
+	if err := c.compileExpr(s.Value); err != nil {
+		return err
+	}
+	c.emitOp(OP_THROW, s.P.Line)
+	return nil
+}
+
+func (c *Compiler) compileWith(s *parser.WithStmt) error {
+	// compile the resource expression
+	if err := c.compileExpr(s.Expr); err != nil {
+		return err
+	}
+
+	c.beginScope()
+	varSlot := c.addLocal(s.VarName)
+
+	// set up try handler for cleanup
+	tryBegin := c.emitJump(OP_TRY_BEGIN, s.P.Line)
+
+	// compile body
+	for _, stmt := range s.Body {
+		if err := c.compileStmt(stmt); err != nil {
+			return err
+		}
+	}
+
+	// normal exit: remove handler, close resource
+	c.emitOp(OP_TRY_END, s.P.Line)
+
+	// call .close() on the resource
+	c.emitOp(OP_LOAD_LOCAL, s.P.Line)
+	c.emit(byte(varSlot), s.P.Line)
+	closeIdx := c.addConstant("close")
+	c.emitOp(OP_METHOD_CALL, s.P.Line)
+	c.emitUint16(closeIdx, s.P.Line)
+	c.emit(0, s.P.Line) // 0 args
+	c.emitOp(OP_POP, s.P.Line)
+
+	endJump := c.emitJump(OP_JUMP, s.P.Line)
+
+	// catch handler: close resource and re-throw
+	c.patchJump(tryBegin)
+
+	// the error is on the stack, save it temporarily
+	errSlot := c.addLocal("$with_err")
+
+	// call .close()
+	c.emitOp(OP_LOAD_LOCAL, s.P.Line)
+	c.emit(byte(varSlot), s.P.Line)
+	c.emitOp(OP_METHOD_CALL, s.P.Line)
+	c.emitUint16(closeIdx, s.P.Line)
+	c.emit(0, s.P.Line)
+	c.emitOp(OP_POP, s.P.Line)
+
+	// re-throw
+	c.emitOp(OP_LOAD_LOCAL, s.P.Line)
+	c.emit(byte(errSlot), s.P.Line)
+	c.emitOp(OP_THROW, s.P.Line)
+
+	c.patchJump(endJump)
+	c.endScope(s.P.Line)
 	return nil
 }

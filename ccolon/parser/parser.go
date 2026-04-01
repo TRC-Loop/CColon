@@ -99,13 +99,51 @@ func (p *Parser) parseStatement() (Stmt, error) {
 	case lexer.TOKEN_CONTINUE:
 		tok := p.advance()
 		return &ContinueStmt{P: Position{tok.Line, tok.Col}}, nil
+	case lexer.TOKEN_CLASS:
+		return p.parseClassDecl()
+	case lexer.TOKEN_TRY:
+		return p.parseTryCatch()
+	case lexer.TOKEN_THROW:
+		return p.parseThrow()
+	case lexer.TOKEN_WITH:
+		return p.parseWithStmt()
 	default:
+		// better error for mistyped keywords: if an identifier is followed by something
+		// that looks like a function or block declaration, the user likely mistyped a keyword
+		if p.current().Type == lexer.TOKEN_IDENT {
+			next := p.peek()
+			if next.Type == lexer.TOKEN_IDENT || next.Type == lexer.TOKEN_LBRACE || next.Type == lexer.TOKEN_LPAREN {
+				// check if it looks like a mistyped keyword
+				lit := p.current().Literal
+				if lit != "true" && lit != "false" && lit != "nil" {
+					suggestions := map[string]string{
+						"func": "function", "fn": "function", "fnction": "function",
+						"funciton": "function", "fucntion": "function",
+						"clas": "class", "classs": "class",
+						"imprt": "import", "impor": "import",
+						"retrun": "return", "reutrn": "return",
+						"whlie": "while", "whlile": "while",
+					}
+					if suggestion, ok := suggestions[lit]; ok {
+						return nil, fmt.Errorf("line %d:%d: unknown keyword '%s', did you mean '%s'?",
+							p.current().Line, p.current().Col, lit, suggestion)
+					}
+				}
+			}
+		}
 		return p.parseExpressionStatement()
 	}
 }
 
 func (p *Parser) parseImport() (*ImportStmt, error) {
 	tok := p.advance() // consume 'import'
+
+	// import "file.ccl" or import modulename
+	if p.current().Type == lexer.TOKEN_STRING_LIT {
+		path := p.advance()
+		return &ImportStmt{Module: path.Literal, IsFile: true, P: Position{tok.Line, tok.Col}}, nil
+	}
+
 	name, err := p.expect(lexer.TOKEN_IDENT)
 	if err != nil {
 		return nil, err
@@ -116,9 +154,9 @@ func (p *Parser) parseImport() (*ImportStmt, error) {
 func (p *Parser) parseVarDecl() (*VarDecl, error) {
 	tok := p.advance() // consume 'var'
 
-	// type name
+	// type name (built-in type or class name)
 	typeTok := p.current()
-	if !lexer.IsTypeKeyword(typeTok.Type) {
+	if !lexer.IsClassTypeKeyword(typeTok.Type) {
 		return nil, fmt.Errorf("line %d:%d: expected type, got '%s'", typeTok.Line, typeTok.Col, typeTok.Literal)
 	}
 	p.advance()
@@ -157,30 +195,15 @@ func (p *Parser) parseFuncDecl() (*FuncDecl, error) {
 		return nil, err
 	}
 
-	var params []Param
-	for p.current().Type != lexer.TOKEN_RPAREN {
-		if len(params) > 0 {
-			if _, err := p.expect(lexer.TOKEN_COMMA); err != nil {
-				return nil, err
-			}
-		}
-		paramType := p.current()
-		if !lexer.IsTypeKeyword(paramType.Type) {
-			return nil, fmt.Errorf("line %d:%d: expected parameter type, got '%s'",
-				paramType.Line, paramType.Col, paramType.Literal)
-		}
-		p.advance()
-		paramName, err := p.expect(lexer.TOKEN_IDENT)
-		if err != nil {
-			return nil, err
-		}
-		params = append(params, Param{TypeName: paramType.Literal, Name: paramName.Literal})
+	params, err := p.parseParamList()
+	if err != nil {
+		return nil, err
 	}
 	p.advance() // consume ')'
 
 	// optional return type
 	retType := ""
-	if lexer.IsTypeKeyword(p.current().Type) {
+	if lexer.IsClassTypeKeyword(p.current().Type) {
 		retType = p.current().Literal
 		p.advance()
 	}
@@ -462,6 +485,16 @@ func (p *Parser) parsePrefix() (Expr, error) {
 		}
 		return expr, nil
 
+	case lexer.TOKEN_SELF:
+		p.advance()
+		return &SelfExpr{P: Position{tok.Line, tok.Col}}, nil
+
+	case lexer.TOKEN_SUPER:
+		return p.parseSuperCall()
+
+	case lexer.TOKEN_LBRACE:
+		return p.parseDictLiteral()
+
 	case lexer.TOKEN_LBRACKET:
 		return p.parseListLiteral()
 
@@ -499,11 +532,10 @@ func (p *Parser) parseInfix(left Expr, prec int) (Expr, error) {
 				P:      Position{tok.Line, tok.Col},
 			}, nil
 		}
-		// property access (no parens) - treat as method call with no args for now
-		return &MethodCallExpr{
+		// property access (no parens) - field access
+		return &FieldAccessExpr{
 			Object: left,
-			Method: method.Literal,
-			Args:   nil,
+			Field:  method.Literal,
 			P:      Position{tok.Line, tok.Col},
 		}, nil
 
@@ -643,4 +675,355 @@ func (p *Parser) parseFixed() (Expr, error) {
 		return nil, err
 	}
 	return &FixedArrayLiteral{Elements: elements, P: Position{tok.Line, tok.Col}}, nil
+}
+
+func (p *Parser) parseClassDecl() (*ClassDecl, error) {
+	tok := p.advance() // consume 'class'
+
+	name, err := p.expect(lexer.TOKEN_IDENT)
+	if err != nil {
+		return nil, err
+	}
+
+	superName := ""
+	if p.current().Type == lexer.TOKEN_EXTENDS {
+		p.advance()
+		super, err := p.expect(lexer.TOKEN_IDENT)
+		if err != nil {
+			return nil, err
+		}
+		superName = super.Literal
+	}
+
+	if _, err := p.expect(lexer.TOKEN_LBRACE); err != nil {
+		return nil, err
+	}
+
+	var fields []FieldDecl
+	var methods []MethodDecl
+
+	for p.current().Type != lexer.TOKEN_RBRACE && p.current().Type != lexer.TOKEN_EOF {
+		// skip stray semicolons
+		for p.current().Type == lexer.TOKEN_SEMICOLON {
+			p.advance()
+		}
+		if p.current().Type == lexer.TOKEN_RBRACE {
+			break
+		}
+
+		if p.current().Type == lexer.TOKEN_VAR {
+			field, err := p.parseFieldDecl()
+			if err != nil {
+				return nil, err
+			}
+			fields = append(fields, *field)
+		} else if p.current().Type == lexer.TOKEN_PUBLIC || p.current().Type == lexer.TOKEN_PRIVATE {
+			visibility := p.current().Literal
+			p.advance()
+
+			if p.current().Type == lexer.TOKEN_FUNCTION {
+				method, err := p.parseMethodDecl(visibility)
+				if err != nil {
+					return nil, err
+				}
+				methods = append(methods, *method)
+			} else {
+				return nil, fmt.Errorf("line %d:%d: expected 'function' after '%s', got '%s'",
+					p.current().Line, p.current().Col, visibility, p.current().Literal)
+			}
+		} else {
+			return nil, fmt.Errorf("line %d:%d: expected 'var', 'public', or 'private' in class body, got '%s'",
+				p.current().Line, p.current().Col, p.current().Literal)
+		}
+	}
+
+	if _, err := p.expect(lexer.TOKEN_RBRACE); err != nil {
+		return nil, err
+	}
+
+	return &ClassDecl{
+		Name:      name.Literal,
+		SuperName: superName,
+		Fields:    fields,
+		Methods:   methods,
+		P:         Position{tok.Line, tok.Col},
+	}, nil
+}
+
+func (p *Parser) parseFieldDecl() (*FieldDecl, error) {
+	tok := p.advance() // consume 'var'
+
+	// expect public or private
+	if p.current().Type != lexer.TOKEN_PUBLIC && p.current().Type != lexer.TOKEN_PRIVATE {
+		return nil, fmt.Errorf("line %d:%d: expected 'public' or 'private' after 'var' in class, got '%s'",
+			p.current().Line, p.current().Col, p.current().Literal)
+	}
+	visibility := p.current().Literal
+	p.advance()
+
+	// type
+	typeTok := p.current()
+	if !lexer.IsClassTypeKeyword(typeTok.Type) {
+		return nil, fmt.Errorf("line %d:%d: expected type, got '%s'", typeTok.Line, typeTok.Col, typeTok.Literal)
+	}
+	p.advance()
+
+	// name
+	nameTok, err := p.expect(lexer.TOKEN_IDENT)
+	if err != nil {
+		return nil, err
+	}
+
+	// optional default value
+	var defaultVal Expr
+	if p.current().Type == lexer.TOKEN_ASSIGN {
+		p.advance()
+		defaultVal, err = p.parseExpression(0)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &FieldDecl{
+		Visibility: visibility,
+		TypeName:   typeTok.Literal,
+		Name:       nameTok.Literal,
+		Default:    defaultVal,
+		P:          Position{tok.Line, tok.Col},
+	}, nil
+}
+
+func (p *Parser) parseMethodDecl(visibility string) (*MethodDecl, error) {
+	tok := p.advance() // consume 'function'
+
+	nameTok, err := p.expect(lexer.TOKEN_IDENT)
+	if err != nil {
+		return nil, err
+	}
+
+	// init is always private
+	methodName := nameTok.Literal
+	if methodName == "init" {
+		visibility = "private"
+	}
+
+	if _, err := p.expect(lexer.TOKEN_LPAREN); err != nil {
+		return nil, err
+	}
+
+	params, err := p.parseParamList()
+	if err != nil {
+		return nil, err
+	}
+
+	p.advance() // consume ')'
+
+	// optional return type
+	retType := ""
+	if lexer.IsClassTypeKeyword(p.current().Type) {
+		retType = p.current().Literal
+		p.advance()
+	}
+
+	body, err := p.parseBlock()
+	if err != nil {
+		return nil, err
+	}
+
+	return &MethodDecl{
+		Visibility: visibility,
+		Name:       methodName,
+		Params:     params,
+		ReturnType: retType,
+		Body:       body,
+		P:          Position{tok.Line, tok.Col},
+	}, nil
+}
+
+func (p *Parser) parseParamList() ([]Param, error) {
+	var params []Param
+	hasOptional := false
+	for p.current().Type != lexer.TOKEN_RPAREN {
+		if len(params) > 0 {
+			if _, err := p.expect(lexer.TOKEN_COMMA); err != nil {
+				return nil, err
+			}
+		}
+		paramType := p.current()
+		if !lexer.IsClassTypeKeyword(paramType.Type) {
+			return nil, fmt.Errorf("line %d:%d: expected parameter type, got '%s'",
+				paramType.Line, paramType.Col, paramType.Literal)
+		}
+		p.advance()
+		paramName, err := p.expect(lexer.TOKEN_IDENT)
+		if err != nil {
+			return nil, err
+		}
+		param := Param{TypeName: paramType.Literal, Name: paramName.Literal}
+
+		// optional default value
+		if p.current().Type == lexer.TOKEN_ASSIGN {
+			p.advance()
+			def, err := p.parseExpression(0)
+			if err != nil {
+				return nil, err
+			}
+			param.Default = def
+			hasOptional = true
+		} else if hasOptional {
+			return nil, fmt.Errorf("line %d:%d: required parameter '%s' cannot follow optional parameters",
+				paramName.Line, paramName.Col, paramName.Literal)
+		}
+
+		params = append(params, param)
+	}
+	return params, nil
+}
+
+func (p *Parser) parseSuperCall() (Expr, error) {
+	tok := p.advance() // consume 'super'
+	if _, err := p.expect(lexer.TOKEN_DOT); err != nil {
+		return nil, err
+	}
+	method, err := p.expect(lexer.TOKEN_IDENT)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := p.expect(lexer.TOKEN_LPAREN); err != nil {
+		return nil, err
+	}
+	args, err := p.parseArgList()
+	if err != nil {
+		return nil, err
+	}
+	return &SuperCallExpr{
+		Method: method.Literal,
+		Args:   args,
+		P:      Position{tok.Line, tok.Col},
+	}, nil
+}
+
+func (p *Parser) parseDictLiteral() (Expr, error) {
+	tok := p.advance() // consume '{'
+	var keys, values []Expr
+
+	if p.current().Type == lexer.TOKEN_RBRACE {
+		p.advance()
+		return &DictLiteral{Keys: keys, Values: values, P: Position{tok.Line, tok.Col}}, nil
+	}
+
+	for {
+		key, err := p.parseExpression(0)
+		if err != nil {
+			return nil, err
+		}
+		keys = append(keys, key)
+
+		if _, err := p.expect(lexer.TOKEN_COLON); err != nil {
+			return nil, err
+		}
+
+		value, err := p.parseExpression(0)
+		if err != nil {
+			return nil, err
+		}
+		values = append(values, value)
+
+		if p.current().Type == lexer.TOKEN_COMMA {
+			p.advance()
+			if p.current().Type == lexer.TOKEN_RBRACE {
+				break // trailing comma
+			}
+		} else {
+			break
+		}
+	}
+
+	if _, err := p.expect(lexer.TOKEN_RBRACE); err != nil {
+		return nil, err
+	}
+	return &DictLiteral{Keys: keys, Values: values, P: Position{tok.Line, tok.Col}}, nil
+}
+
+func (p *Parser) parseTryCatch() (*TryCatchStmt, error) {
+	tok := p.advance() // consume 'try'
+
+	tryBody, err := p.parseBlock()
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := p.expect(lexer.TOKEN_CATCH); err != nil {
+		return nil, err
+	}
+
+	if _, err := p.expect(lexer.TOKEN_LPAREN); err != nil {
+		return nil, err
+	}
+
+	catchType, err := p.expect(lexer.TOKEN_IDENT)
+	if err != nil {
+		return nil, err
+	}
+
+	catchName, err := p.expect(lexer.TOKEN_IDENT)
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := p.expect(lexer.TOKEN_RPAREN); err != nil {
+		return nil, err
+	}
+
+	catchBody, err := p.parseBlock()
+	if err != nil {
+		return nil, err
+	}
+
+	return &TryCatchStmt{
+		TryBody:   tryBody,
+		CatchType: catchType.Literal,
+		CatchName: catchName.Literal,
+		CatchBody: catchBody,
+		P:         Position{tok.Line, tok.Col},
+	}, nil
+}
+
+func (p *Parser) parseThrow() (*ThrowStmt, error) {
+	tok := p.advance() // consume 'throw'
+	value, err := p.parseExpression(0)
+	if err != nil {
+		return nil, err
+	}
+	return &ThrowStmt{Value: value, P: Position{tok.Line, tok.Col}}, nil
+}
+
+func (p *Parser) parseWithStmt() (*WithStmt, error) {
+	tok := p.advance() // consume 'with'
+
+	expr, err := p.parseExpression(0)
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := p.expect(lexer.TOKEN_AS); err != nil {
+		return nil, err
+	}
+
+	varName, err := p.expect(lexer.TOKEN_IDENT)
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := p.parseBlock()
+	if err != nil {
+		return nil, err
+	}
+
+	return &WithStmt{
+		Expr:    expr,
+		VarName: varName.Literal,
+		Body:    body,
+		P:       Position{tok.Line, tok.Col},
+	}, nil
 }

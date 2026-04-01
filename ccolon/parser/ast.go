@@ -96,6 +96,28 @@ type RangeExpr struct {
 	P     Position
 }
 
+type SelfExpr struct {
+	P Position
+}
+
+type FieldAccessExpr struct {
+	Object Expr
+	Field  string
+	P      Position
+}
+
+type SuperCallExpr struct {
+	Method string
+	Args   []Expr
+	P      Position
+}
+
+type DictLiteral struct {
+	Keys   []Expr
+	Values []Expr
+	P      Position
+}
+
 func (n *IntLiteral) Pos() Position        { return n.P }
 func (n *FloatLiteral) Pos() Position      { return n.P }
 func (n *StringLiteral) Pos() Position     { return n.P }
@@ -109,6 +131,10 @@ func (n *IndexExpr) Pos() Position         { return n.P }
 func (n *ListLiteral) Pos() Position       { return n.P }
 func (n *FixedArrayLiteral) Pos() Position { return n.P }
 func (n *RangeExpr) Pos() Position         { return n.P }
+func (n *SelfExpr) Pos() Position           { return n.P }
+func (n *FieldAccessExpr) Pos() Position    { return n.P }
+func (n *SuperCallExpr) Pos() Position      { return n.P }
+func (n *DictLiteral) Pos() Position        { return n.P }
 
 func (n *IntLiteral) exprNode()        {}
 func (n *FloatLiteral) exprNode()      {}
@@ -123,12 +149,34 @@ func (n *IndexExpr) exprNode()         {}
 func (n *ListLiteral) exprNode()       {}
 func (n *FixedArrayLiteral) exprNode() {}
 func (n *RangeExpr) exprNode()         {}
+func (n *SelfExpr) exprNode()           {}
+func (n *FieldAccessExpr) exprNode()    {}
+func (n *SuperCallExpr) exprNode()      {}
+func (n *DictLiteral) exprNode()        {}
 
 // --- Statements ---
 
 type Param struct {
 	TypeName string
 	Name     string
+	Default  Expr
+}
+
+type FieldDecl struct {
+	Visibility string
+	TypeName   string
+	Name       string
+	Default    Expr
+	P          Position
+}
+
+type MethodDecl struct {
+	Visibility string
+	Name       string
+	Params     []Param
+	ReturnType string
+	Body       []Stmt
+	P          Position
 }
 
 type VarDecl struct {
@@ -192,7 +240,36 @@ type FuncDecl struct {
 
 type ImportStmt struct {
 	Module string
+	IsFile bool
 	P      Position
+}
+
+type ClassDecl struct {
+	Name      string
+	SuperName string
+	Fields    []FieldDecl
+	Methods   []MethodDecl
+	P         Position
+}
+
+type TryCatchStmt struct {
+	TryBody   []Stmt
+	CatchType string
+	CatchName string
+	CatchBody []Stmt
+	P         Position
+}
+
+type ThrowStmt struct {
+	Value Expr
+	P     Position
+}
+
+type WithStmt struct {
+	Expr    Expr
+	VarName string
+	Body    []Stmt
+	P       Position
 }
 
 type Program struct {
@@ -209,7 +286,11 @@ func (n *ForInStmt) Pos() Position    { return n.P }
 func (n *BreakStmt) Pos() Position    { return n.P }
 func (n *ContinueStmt) Pos() Position { return n.P }
 func (n *FuncDecl) Pos() Position     { return n.P }
-func (n *ImportStmt) Pos() Position   { return n.P }
+func (n *ImportStmt) Pos() Position    { return n.P }
+func (n *ClassDecl) Pos() Position     { return n.P }
+func (n *TryCatchStmt) Pos() Position  { return n.P }
+func (n *ThrowStmt) Pos() Position     { return n.P }
+func (n *WithStmt) Pos() Position      { return n.P }
 
 func (n *VarDecl) stmtNode()      {}
 func (n *AssignStmt) stmtNode()   {}
@@ -221,4 +302,8 @@ func (n *ForInStmt) stmtNode()    {}
 func (n *BreakStmt) stmtNode()    {}
 func (n *ContinueStmt) stmtNode() {}
 func (n *FuncDecl) stmtNode()     {}
-func (n *ImportStmt) stmtNode()   {}
+func (n *ImportStmt) stmtNode()    {}
+func (n *ClassDecl) stmtNode()     {}
+func (n *TryCatchStmt) stmtNode()  {}
+func (n *ThrowStmt) stmtNode()     {}
+func (n *WithStmt) stmtNode()      {}

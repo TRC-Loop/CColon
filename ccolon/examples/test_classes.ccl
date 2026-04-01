@@ -1,0 +1,58 @@
+import console
+
+class Animal {
+    var public string name = "unknown"
+    var public int age = 0
+
+    public function init(string name, int age) {
+        self.name = name
+        self.age = age
+    }
+
+    public function speak() string {
+        return self.name + " makes a sound"
+    }
+
+    public function info() string {
+        return self.name + " (age " + self.age.tostring() + ")"
+    }
+}
+
+class Dog extends Animal {
+    var public string breed = "unknown"
+
+    public function init(string name, int age, string breed) {
+        super.init(name, age)
+        self.breed = breed
+    }
+
+    public function speak() string {
+        return self.name + " barks!"
+    }
+}
+
+function main() {
+    var Animal cat = Animal("Whiskers", 3)
+    console.println(cat.speak())
+    console.println(cat.info())
+
+    var Dog dog = Dog("Rex", 5, "Labrador")
+    console.println(dog.speak())
+    console.println(dog.info())
+    console.println(dog.breed)
+
+    // dict test
+    var dict colors = {"red": 1, "green": 2, "blue": 3}
+    console.println(colors["red"].tostring())
+    console.println(colors.length().tostring())
+    console.println(colors.has("green").tostring())
+
+    // try/catch test
+    try {
+        throw Error("something went wrong")
+    } catch (Error e) {
+        console.println(e.message)
+    }
+
+    console.println("all tests passed")
+}

@@ -1,7 +1,9 @@
 package vm
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/TRC-Loop/ccolon/compiler"
@@ -20,6 +22,10 @@ const (
 	VAL_FUNC
 	VAL_NATIVE_FUNC
 	VAL_MODULE
+	VAL_CLASS
+	VAL_INSTANCE
+	VAL_DICT
+	VAL_FILE
 )
 
 type Value interface {
@@ -44,6 +50,45 @@ type ModuleValue struct {
 	Methods map[string]*NativeFuncValue
 }
 
+type FieldDef struct {
+	Visibility string
+	TypeName   string
+	Default    Value
+}
+
+type MethodDef struct {
+	Visibility string
+	Fn         *compiler.FuncObject
+}
+
+type ClassValue struct {
+	Name      string
+	Super     *ClassValue
+	Fields    map[string]FieldDef
+	Methods   map[string]*MethodDef
+	InitArity int
+	MaxArity  int
+	InitDefs  []interface{}
+}
+
+type InstanceValue struct {
+	Class  *ClassValue
+	Fields map[string]Value
+}
+
+type DictValue struct {
+	Entries map[string]Value
+	Order   []string
+}
+
+type FileValue struct {
+	Path    string
+	Mode    string
+	File    *os.File
+	Scanner *bufio.Scanner
+	Closed  bool
+}
+
 func (v *NilValue) Type() ValueType        { return VAL_NIL }
 func (v *IntValue) Type() ValueType         { return VAL_INT }
 func (v *FloatValue) Type() ValueType       { return VAL_FLOAT }
@@ -54,6 +99,10 @@ func (v *ArrayValue) Type() ValueType       { return VAL_ARRAY }
 func (v *FuncValue) Type() ValueType        { return VAL_FUNC }
 func (v *NativeFuncValue) Type() ValueType  { return VAL_NATIVE_FUNC }
 func (v *ModuleValue) Type() ValueType      { return VAL_MODULE }
+func (v *ClassValue) Type() ValueType       { return VAL_CLASS }
+func (v *InstanceValue) Type() ValueType    { return VAL_INSTANCE }
+func (v *DictValue) Type() ValueType        { return VAL_DICT }
+func (v *FileValue) Type() ValueType        { return VAL_FILE }
 
 func (v *NilValue) String() string    { return "nil" }
 func (v *IntValue) String() string    { return fmt.Sprintf("%d", v.Val) }
@@ -62,7 +111,63 @@ func (v *BoolValue) String() string   { return fmt.Sprintf("%t", v.Val) }
 func (v *StringValue) String() string { return v.Val }
 func (v *FuncValue) String() string   { return fmt.Sprintf("<function %s>", v.Obj.Name) }
 func (v *NativeFuncValue) String() string { return fmt.Sprintf("<native %s>", v.Name) }
-func (v *ModuleValue) String() string { return fmt.Sprintf("<module %s>", v.Name) }
+func (v *ModuleValue) String() string  { return fmt.Sprintf("<module %s>", v.Name) }
+func (v *ClassValue) String() string   { return fmt.Sprintf("<class %s>", v.Name) }
+
+func (v *InstanceValue) String() string {
+	parts := []string{}
+	for name, val := range v.Fields {
+		def, hasDef := v.Class.Fields[name]
+		if hasDef && def.Visibility == "private" {
+			continue
+		}
+		if s, ok := val.(*StringValue); ok {
+			parts = append(parts, fmt.Sprintf("%s=%q", name, s.Val))
+		} else {
+			parts = append(parts, fmt.Sprintf("%s=%s", name, val.String()))
+		}
+	}
+	methods := []string{}
+	cls := v.Class
+	for cls != nil {
+		for name, m := range cls.Methods {
+			if m.Visibility == "public" {
+				methods = append(methods, name+"()")
+			}
+		}
+		cls = cls.Super
+	}
+	result := fmt.Sprintf("<%s", v.Class.Name)
+	if len(parts) > 0 {
+		result += " " + strings.Join(parts, ", ")
+	}
+	if len(methods) > 0 {
+		result += " | " + strings.Join(methods, ", ")
+	}
+	result += ">"
+	return result
+}
+
+func (v *DictValue) String() string {
+	parts := make([]string, len(v.Order))
+	for i, key := range v.Order {
+		val := v.Entries[key]
+		if s, ok := val.(*StringValue); ok {
+			parts[i] = fmt.Sprintf("%q: %q", key, s.Val)
+		} else {
+			parts[i] = fmt.Sprintf("%q: %s", key, val.String())
+		}
+	}
+	return "{" + strings.Join(parts, ", ") + "}"
+}
+
+func (v *FileValue) String() string {
+	state := "open"
+	if v.Closed {
+		state = "closed"
+	}
+	return fmt.Sprintf("<file '%s' mode='%s' %s>", v.Path, v.Mode, state)
+}
 
 func (v *ListValue) String() string {
 	parts := make([]string, len(v.Elements))
@@ -104,6 +209,12 @@ func IsTruthy(v Value) bool {
 		return len(val.Elements) > 0
 	case *ArrayValue:
 		return len(val.Elements) > 0
+	case *DictValue:
+		return len(val.Entries) > 0
+	case *InstanceValue:
+		return true
+	case *ClassValue:
+		return true
 	default:
 		return true
 	}

@@ -1,0 +1,7 @@
+import console
+import "utils.ccl"
+
+function main() {
+    console.println("double(5) = " + double(5).tostring())
+    console.println("square(4) = " + square(4).tostring())
+}

@@ -30,6 +30,17 @@ const (
 	TOKEN_FALSE
 	TOKEN_BREAK
 	TOKEN_CONTINUE
+	TOKEN_CLASS
+	TOKEN_EXTENDS
+	TOKEN_SELF
+	TOKEN_SUPER
+	TOKEN_PUBLIC
+	TOKEN_PRIVATE
+	TOKEN_TRY
+	TOKEN_CATCH
+	TOKEN_THROW
+	TOKEN_WITH
+	TOKEN_AS
 
 	// Type keywords
 	TOKEN_TYPE_STRING
@@ -38,6 +49,7 @@ const (
 	TOKEN_TYPE_BOOL
 	TOKEN_TYPE_LIST
 	TOKEN_TYPE_ARRAY
+	TOKEN_TYPE_DICT
 
 	// Built-in functions
 	TOKEN_RANGE
@@ -66,6 +78,7 @@ const (
 	TOKEN_RBRACKET
 	TOKEN_COMMA
 	TOKEN_DOT
+	TOKEN_COLON
 	TOKEN_SEMICOLON
 )
 
@@ -86,12 +99,24 @@ var keywords = map[string]TokenType{
 	"false":    TOKEN_FALSE,
 	"break":    TOKEN_BREAK,
 	"continue": TOKEN_CONTINUE,
+	"class":    TOKEN_CLASS,
+	"extends":  TOKEN_EXTENDS,
+	"self":     TOKEN_SELF,
+	"super":    TOKEN_SUPER,
+	"public":   TOKEN_PUBLIC,
+	"private":  TOKEN_PRIVATE,
+	"try":      TOKEN_TRY,
+	"catch":    TOKEN_CATCH,
+	"throw":    TOKEN_THROW,
+	"with":     TOKEN_WITH,
+	"as":       TOKEN_AS,
 	"string":   TOKEN_TYPE_STRING,
 	"int":      TOKEN_TYPE_INT,
 	"float":    TOKEN_TYPE_FLOAT,
 	"bool":     TOKEN_TYPE_BOOL,
 	"list":     TOKEN_TYPE_LIST,
 	"array":    TOKEN_TYPE_ARRAY,
+	"dict":     TOKEN_TYPE_DICT,
 	"range":    TOKEN_RANGE,
 	"fixed":    TOKEN_FIXED,
 }
@@ -116,15 +141,20 @@ var tokenNames = map[TokenType]string{
 	TOKEN_WHILE: "while", TOKEN_IMPORT: "import", TOKEN_AND: "and",
 	TOKEN_OR: "or", TOKEN_NOT: "not", TOKEN_TRUE: "true", TOKEN_FALSE: "false",
 	TOKEN_BREAK: "break", TOKEN_CONTINUE: "continue",
+	TOKEN_CLASS: "class", TOKEN_EXTENDS: "extends", TOKEN_SELF: "self",
+	TOKEN_SUPER: "super", TOKEN_PUBLIC: "public", TOKEN_PRIVATE: "private",
+	TOKEN_TRY: "try", TOKEN_CATCH: "catch", TOKEN_THROW: "throw",
+	TOKEN_WITH: "with", TOKEN_AS: "as",
 	TOKEN_TYPE_STRING: "string", TOKEN_TYPE_INT: "int", TOKEN_TYPE_FLOAT: "float",
 	TOKEN_TYPE_BOOL: "bool", TOKEN_TYPE_LIST: "list", TOKEN_TYPE_ARRAY: "array",
+	TOKEN_TYPE_DICT: "dict",
 	TOKEN_RANGE: "range", TOKEN_FIXED: "fixed",
 	TOKEN_PLUS: "+", TOKEN_MINUS: "-", TOKEN_STAR: "*", TOKEN_SLASH: "/",
 	TOKEN_PERCENT: "%", TOKEN_ASSIGN: "=", TOKEN_EQ: "==", TOKEN_NEQ: "!=",
 	TOKEN_LT: "<", TOKEN_GT: ">", TOKEN_LTE: "<=", TOKEN_GTE: ">=",
 	TOKEN_LPAREN: "(", TOKEN_RPAREN: ")", TOKEN_LBRACE: "{", TOKEN_RBRACE: "}",
 	TOKEN_LBRACKET: "[", TOKEN_RBRACKET: "]", TOKEN_COMMA: ",", TOKEN_DOT: ".",
-	TOKEN_SEMICOLON: ";",
+	TOKEN_COLON: ":", TOKEN_SEMICOLON: ";",
 }
 
 func (t TokenType) String() string {
@@ -135,5 +165,9 @@ func (t TokenType) String() string {
 }
 
 func IsTypeKeyword(t TokenType) bool {
-	return t >= TOKEN_TYPE_STRING && t <= TOKEN_TYPE_ARRAY
+	return t >= TOKEN_TYPE_STRING && t <= TOKEN_TYPE_DICT
+}
+
+func IsClassTypeKeyword(t TokenType) bool {
+	return IsTypeKeyword(t) || t == TOKEN_IDENT
 }

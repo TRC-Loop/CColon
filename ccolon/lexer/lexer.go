@@ -224,6 +224,8 @@ func (l *Lexer) NextToken() (Token, error) {
 		return Token{TOKEN_COMMA, ",", line, col}, nil
 	case '.':
 		return Token{TOKEN_DOT, ".", line, col}, nil
+	case ':':
+		return Token{TOKEN_COLON, ":", line, col}, nil
 	case ';':
 		return Token{TOKEN_SEMICOLON, ";", line, col}, nil
 	}

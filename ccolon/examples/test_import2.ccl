@@ -1,0 +1,11 @@
+import console
+import "shapes.ccl"
+import "shapes.ccl"
+import "utils.ccl"
+
+function main() {
+    var Circle c = Circle(5.0)
+    console.println("Shape: " + c.name)
+    console.println("Area: " + c.area().tostring())
+    console.println("double(7) = " + double(7).tostring())
+}

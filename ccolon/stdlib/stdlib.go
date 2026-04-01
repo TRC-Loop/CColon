@@ -9,6 +9,10 @@ type Registry struct {
 func NewRegistry() *Registry {
 	r := &Registry{modules: make(map[string]*vm.ModuleValue)}
 	r.Register("console", NewConsoleModule())
+	r.Register("math", NewMathModule())
+	r.Register("random", NewRandomModule())
+	r.Register("json", NewJsonModule())
+	r.Register("fs", NewFsModule())
 	return r
 }
 
