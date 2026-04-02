@@ -7,8 +7,6 @@ on:
     paths:
       - "docs/**"
       - "mkdocs.yml"
-    tags:
-      - "v*"
 
 permissions:
   contents: write
@@ -32,26 +30,13 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install MkDocs, theme and mike
-        run: pip install mkdocs-material mike
+      - name: Install MkDocs and theme
+        run: pip install mkdocs-material
 
       - name: Configure git
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
-      - name: Deploy versioned docs (tag push)
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
-          mike deploy --push --update-aliases $VERSION latest
-          echo "CNAME=ccolon.arne.sh" > /tmp/cname
-
-      - name: Deploy dev docs (main push)
-        if: github.ref == 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/')
-        run: |
-          mike deploy --push dev
-
-      - name: Set default version
-        if: startsWith(github.ref, 'refs/tags/v')
-        run: mike set-default --push latest
+      - name: Deploy docs
+        run: mkdocs gh-deploy --force

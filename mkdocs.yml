@@ -62,10 +62,6 @@ nav:
     - Package Manager: tools/packages.md
   - Examples: examples.md
 
-extra:
-  version:
-    provider: mike
-
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
