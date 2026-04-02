@@ -9,7 +9,7 @@ on:
       - "mkdocs.yml"
 
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
@@ -18,25 +18,32 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Install MkDocs and theme
-        run: pip install mkdocs-material
+      - run: pip install mkdocs-material
 
-      - name: Configure git
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
+      - run: mkdocs build
 
-      - name: Deploy docs
-        run: mkdocs gh-deploy --force
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
