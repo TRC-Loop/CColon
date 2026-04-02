@@ -21,6 +21,16 @@ get_arch() {
     esac
 }
 
+sha256_check() {
+    if command -v sha256sum > /dev/null 2>&1; then
+        sha256sum "$1" | awk '{print $1}'
+    elif command -v shasum > /dev/null 2>&1; then
+        shasum -a 256 "$1" | awk '{print $1}'
+    else
+        echo ""
+    fi
+}
+
 OS=$(get_os)
 ARCH=$(get_arch)
 
@@ -36,7 +46,9 @@ else
     fi
 fi
 
-URL="https://github.com/${REPO}/releases/download/${VERSION}/${BINARY_NAME}-${OS}-${ARCH}"
+ASSET="${BINARY_NAME}-${OS}-${ARCH}"
+URL="https://github.com/${REPO}/releases/download/${VERSION}/${ASSET}"
+CHECKSUMS_URL="https://github.com/${REPO}/releases/download/${VERSION}/checksums.txt"
 
 echo "Downloading CColon ${VERSION} from ${URL}..."
 
@@ -49,6 +61,36 @@ else
     echo "curl or wget is required to download CColon."
     exit 1
 fi
+
+# Verify SHA256 checksum
+echo "Verifying checksum..."
+CHECKSUMS_TMP=$(mktemp)
+DOWNLOAD_OK=true
+if command -v curl > /dev/null 2>&1; then
+    curl -fSL -o "$CHECKSUMS_TMP" "$CHECKSUMS_URL" 2>/dev/null || DOWNLOAD_OK=false
+elif command -v wget > /dev/null 2>&1; then
+    wget -q -O "$CHECKSUMS_TMP" "$CHECKSUMS_URL" 2>/dev/null || DOWNLOAD_OK=false
+fi
+
+if [ "$DOWNLOAD_OK" = true ] && [ -s "$CHECKSUMS_TMP" ]; then
+    EXPECTED=$(grep "${ASSET}" "$CHECKSUMS_TMP" | awk '{print $1}')
+    ACTUAL=$(sha256_check "$TMP")
+    if [ -n "$EXPECTED" ] && [ -n "$ACTUAL" ]; then
+        if [ "$EXPECTED" != "$ACTUAL" ]; then
+            echo "Checksum verification FAILED!"
+            echo "  Expected: ${EXPECTED}"
+            echo "  Got:      ${ACTUAL}"
+            rm -f "$TMP" "$CHECKSUMS_TMP"
+            exit 1
+        fi
+        echo "Checksum verified OK."
+    else
+        echo "Warning: could not verify checksum (sha256sum/shasum not available)."
+    fi
+else
+    echo "Warning: checksums.txt not available for this release, skipping verification."
+fi
+rm -f "$CHECKSUMS_TMP"
 
 chmod +x "$TMP"
 

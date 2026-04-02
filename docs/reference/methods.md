@@ -8,11 +8,13 @@ Every value type in CColon has built-in methods that can be called with dot nota
 |--------------|----------------------------|----------|
 | `.tostring()` | Convert to string representation | `string` |
 | `.tofloat()`  | Convert to float           | `float`  |
+| `.tosint()`   | Convert to arbitrary precision sint | `sint` |
 
 ```
 var int n = 42
 console.println(n.tostring())     // "42"
 var float f = n.tofloat()         // 42.0
+var sint big = n.tosint()         // 42 as sint
 ```
 
 ## float methods
@@ -59,7 +61,9 @@ var string num = "123"
 var int parsed = num.toint()             // 123
 ```
 
-`.toint()` and `.tofloat()` produce a runtime error if the string is not a valid number.
+| `.tosint()`     | Parse as arbitrary precision integer | `sint` |
+
+`.toint()`, `.tofloat()`, and `.tosint()` produce a runtime error if the string is not a valid number.
 
 ```
 var string s = "hello world"
@@ -80,6 +84,25 @@ var string word = "hello"
 console.println(word[0])    // "h"
 console.println(word[4])    // "o"
 ```
+
+## sint methods
+
+| Method       | Description                        | Returns  |
+|--------------|------------------------------------|----------|
+| `.tostring()` | Convert to string representation  | `string` |
+| `.toint()`    | Convert to int (errors if too large for 64-bit) | `int` |
+| `.tofloat()`  | Convert to float (may lose precision) | `float` |
+| `.abs()`      | Absolute value                     | `sint`   |
+| `.pow(exp)`   | Raise to a power                   | `sint`   |
+
+```
+var sint big = 99999999999999999999
+console.println(big.tostring())
+console.println(big.abs().tostring())
+console.println(big.pow(2).tostring())
+```
+
+See [sint](sint.md) for full details on the type.
 
 ## bool methods
 

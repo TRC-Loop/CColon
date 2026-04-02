@@ -25,7 +25,7 @@ x = x + 5
 
 ## Types
 
-CColon has six built-in types:
+CColon has eight built-in types:
 
 ### `int`
 
@@ -108,6 +108,28 @@ var array coords = fixed([10, 20, 30])
 ```
 
 See [Lists and Arrays](collections.md) for more.
+
+### `sint`
+
+Arbitrary precision integer with no size limit. Works like Python's `int`. Use this when you need numbers larger than what `int` can hold, or when you want to avoid overflow entirely.
+
+```
+var sint big = 99999999999999999999999999999999
+var sint x = 42.tosint()
+```
+
+Integer literals that are too large for 64-bit are automatically stored as `sint`. See [sint](sint.md) for full details.
+
+### `dict`
+
+A key-value mapping. Keys are strings, values can be any type.
+
+```
+var dict person = {"name": "Alice", "age": 30}
+console.println(person["name"])
+```
+
+See [Dictionaries](dicts.md) for more.
 
 ## Type conversions
 

@@ -136,6 +136,67 @@ func (vm *VM) Run(fn *compiler.FuncObject) error {
 	return vm.execute()
 }
 
+// CallFunc calls a CColon function from Go code with the given arguments.
+// This enables native-to-CColon callbacks (e.g. HTTP server handlers).
+func (vm *VM) CallFunc(fn Value, args []Value) (Value, error) {
+	funcVal, ok := fn.(*FuncValue)
+	if !ok {
+		return nil, fmt.Errorf("CallFunc: expected a function, got %s", fn.String())
+	}
+
+	obj := funcVal.Obj
+	maxArity := obj.MaxArity
+	if maxArity == 0 {
+		maxArity = obj.Arity
+	}
+
+	// Push the function and args onto the stack
+	vm.push(funcVal)
+	for _, arg := range args {
+		vm.push(arg)
+	}
+	argCount := len(args)
+
+	// Fill defaults for missing optional args
+	for i := argCount; i < maxArity; i++ {
+		if obj.Defaults != nil && i < len(obj.Defaults) && obj.Defaults[i] != nil {
+			vm.push(vm.wrapConstant(obj.Defaults[i]))
+		} else {
+			vm.push(&NilValue{})
+		}
+	}
+	totalArgs := maxArity
+	if totalArgs < argCount {
+		totalArgs = argCount
+	}
+
+	// Set up the call frame (same logic as callFunc)
+	basePtr := vm.sp - totalArgs
+	for i := 0; i < totalArgs; i++ {
+		vm.stack[basePtr-1+i] = vm.stack[basePtr+i]
+	}
+	vm.sp = basePtr - 1 + totalArgs
+	newBase := basePtr - 1
+
+	vm.frames = append(vm.frames, CallFrame{
+		function: obj,
+		ip:       0,
+		basePtr:  newBase,
+	})
+	vm.fp = len(vm.frames)
+
+	// Run until the frame returns
+	if err := vm.execute(); err != nil {
+		return nil, err
+	}
+
+	// The return value is on top of the stack
+	if vm.sp > 0 {
+		return vm.pop(), nil
+	}
+	return &NilValue{}, nil
+}
+
 func (vm *VM) execute() error {
 	for {
 		op := compiler.OpCode(vm.readByte())

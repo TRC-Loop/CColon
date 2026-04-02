@@ -15,7 +15,6 @@ func NewRegistry() *Registry {
 	r.Register("fs", NewFsModule())
 	r.Register("datetime", NewDatetimeModule())
 	r.Register("os", NewOsModule())
-	r.Register("http", NewHttpModule())
 	return r
 }
 
@@ -32,4 +31,6 @@ func (r *Registry) RegisterAll(machine *vm.VM) {
 	for name, mod := range r.modules {
 		machine.RegisterModule(name, mod)
 	}
+	// http module needs VM access for callbacks (http.listen handler)
+	machine.RegisterModule("http", NewHttpModule(machine))
 }

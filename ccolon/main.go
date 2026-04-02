@@ -17,7 +17,7 @@ import (
 	"github.com/TRC-Loop/ccolon/vm"
 )
 
-const version = "1.0.0"
+const version = "1.1.0"
 
 func main() {
 	if len(os.Args) < 2 {
@@ -323,6 +323,9 @@ func runFile(source string, baseDir string) error {
 		}
 		return compileSource(string(data))
 	}
+
+	// Load installed packages
+	pkg.LoadPackages(machine, compileSource)
 
 	if err := machine.Run(fn); err != nil {
 		return err

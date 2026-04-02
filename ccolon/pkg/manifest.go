@@ -16,6 +16,8 @@ type Manifest struct {
 	Description  string            `json:"description,omitempty"`
 	Dependencies map[string]string `json:"dependencies,omitempty"`
 	Registry     string            `json:"registry,omitempty"`
+	Type         string            `json:"type,omitempty"`  // "ccl" (default) or "go"
+	Entry        string            `json:"entry,omitempty"` // entry point file
 }
 
 // RegistryURL returns the effective registry URL, checking the manifest field

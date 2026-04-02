@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"os"
 	"strings"
-	"syscall"
-	"unsafe"
 
 	"github.com/TRC-Loop/ccolon/vm"
 )
@@ -108,28 +106,11 @@ func NewConsoleModule() *vm.ModuleValue {
 			"getSize": {
 				Name: "console.getSize",
 				Fn: func(args []vm.Value) (vm.Value, error) {
-					type winsize struct {
-						Row    uint16
-						Col    uint16
-						Xpixel uint16
-						Ypixel uint16
-					}
-					ws := &winsize{}
-					_, _, err := syscall.Syscall(syscall.SYS_IOCTL,
-						uintptr(syscall.Stdout),
-						uintptr(syscall.TIOCGWINSZ),
-						uintptr(unsafe.Pointer(ws)))
-
-					width := int64(80)
-					height := int64(24)
-					if err == 0 {
-						width = int64(ws.Col)
-						height = int64(ws.Row)
-					}
+					w, h := getTerminalSize()
 					return &vm.DictValue{
 						Entries: map[string]vm.Value{
-							"width":  &vm.IntValue{Val: width},
-							"height": &vm.IntValue{Val: height},
+							"width":  &vm.IntValue{Val: int64(w)},
+							"height": &vm.IntValue{Val: int64(h)},
 						},
 						Order: []string{"width", "height"},
 					}, nil

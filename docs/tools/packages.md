@@ -126,6 +126,36 @@ ccolon pkg install https://github.com/you/your-package@1.0.0
 
 Without a version, the latest code from the `main` branch is used.
 
+## Using installed packages
+
+Once a package is installed, its functions and globals are available in your CColon programs. CCL packages are loaded by running their entry file, which registers functions and variables into the VM. Go native packages register modules that you can call directly.
+
+```
+import console
+
+function main() {
+    // If a package registered a function called "greet"
+    greet("world")
+}
+```
+
+Packages are loaded automatically when you run any `.ccl` file. The package loader scans `~/.ccolon/packages/` at startup and loads every installed package.
+
+## How packages are loaded
+
+1. The CColon runtime scans `~/.ccolon/packages/` for directories
+2. For each directory, it reads the `ccolon.json` manifest
+3. Based on the `type` field:
+    - **CCL packages**: the entry file (default `lib.ccl`) is compiled and executed, registering its functions into the runtime
+    - **Go packages**: the compiled Go plugin is loaded via Go's plugin system (Linux and macOS only)
+4. All registered functions and modules become available to your program
+
 ## Installation directory
 
 Packages are installed to `~/.ccolon/packages/<name>@<version>/`.
+
+## Limitations
+
+- Go native packages only work on Linux and macOS. Windows does not support Go plugins.
+- Packages do not have isolated namespaces yet. If two packages define a function with the same name, the second one loaded wins.
+- There is no automatic dependency resolution. If a package depends on another package, you need to install it manually.

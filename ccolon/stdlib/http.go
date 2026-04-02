@@ -9,7 +9,7 @@ import (
 	"github.com/TRC-Loop/ccolon/vm"
 )
 
-func NewHttpModule() *vm.ModuleValue {
+func NewHttpModule(machine *vm.VM) *vm.ModuleValue {
 	return &vm.ModuleValue{
 		Name: "http",
 		Methods: map[string]*vm.NativeFuncValue{
@@ -43,12 +43,89 @@ func NewHttpModule() *vm.ModuleValue {
 					if !ok {
 						return nil, fmt.Errorf("http.listen() handler must be a function")
 					}
-					_ = handler // handler will be called via VM callback
+
 					addr := fmt.Sprintf(":%d", port.Val)
 					fmt.Printf("CColon HTTP server listening on %s\n", addr)
-					// We store the handler ref but can't call it without VM access.
-					// The server integration is done through the VM's CallFunc.
-					return nil, fmt.Errorf("http.listen() requires VM callback support (use the listen helper)")
+
+					mux := http.NewServeMux()
+					mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+						body, _ := io.ReadAll(r.Body)
+						r.Body.Close()
+
+						// Build request dict
+						headerDict := &vm.DictValue{
+							Entries: make(map[string]vm.Value),
+							Order:   []string{},
+						}
+						for key := range r.Header {
+							lk := strings.ToLower(key)
+							headerDict.Entries[lk] = &vm.StringValue{Val: r.Header.Get(key)}
+							headerDict.Order = append(headerDict.Order, lk)
+						}
+
+						reqDict := &vm.DictValue{
+							Entries: map[string]vm.Value{
+								"method":  &vm.StringValue{Val: r.Method},
+								"path":    &vm.StringValue{Val: r.URL.Path},
+								"body":    &vm.StringValue{Val: string(body)},
+								"headers": headerDict,
+								"query":   &vm.StringValue{Val: r.URL.RawQuery},
+							},
+							Order: []string{"method", "path", "body", "headers", "query"},
+						}
+
+						result, err := machine.CallFunc(handler, []vm.Value{reqDict})
+						if err != nil {
+							http.Error(w, "handler error: "+err.Error(), 500)
+							return
+						}
+
+						// Handle response
+						switch resp := result.(type) {
+						case *vm.StringValue:
+							w.Header().Set("Content-Type", "text/plain")
+							w.WriteHeader(200)
+							w.Write([]byte(resp.Val))
+						case *vm.DictValue:
+							// Expect {status: int, body: string, headers: dict}
+							status := 200
+							respBody := ""
+							if s, ok := resp.Entries["status"]; ok {
+								if iv, ok := s.(*vm.IntValue); ok {
+									status = int(iv.Val)
+								}
+							}
+							if b, ok := resp.Entries["body"]; ok {
+								if sv, ok := b.(*vm.StringValue); ok {
+									respBody = sv.Val
+								}
+							}
+							if h, ok := resp.Entries["headers"]; ok {
+								if hd, ok := h.(*vm.DictValue); ok {
+									for key, val := range hd.Entries {
+										if sv, ok := val.(*vm.StringValue); ok {
+											w.Header().Set(key, sv.Val)
+										}
+									}
+								}
+							}
+							w.WriteHeader(status)
+							w.Write([]byte(respBody))
+						case *vm.NilValue:
+							w.WriteHeader(204)
+						default:
+							w.Header().Set("Content-Type", "text/plain")
+							w.WriteHeader(200)
+							w.Write([]byte(result.String()))
+						}
+					})
+
+					// This blocks, so it won't return until the server stops
+					err := http.ListenAndServe(addr, mux)
+					if err != nil {
+						return nil, fmt.Errorf("http.listen() failed: %s", err)
+					}
+					return &vm.NilValue{}, nil
 				},
 			},
 		},

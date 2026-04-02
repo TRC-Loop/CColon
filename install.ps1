@@ -16,7 +16,9 @@ if ($args.Count -gt 0) {
     $version = $release.tag_name
 }
 
-$url = "https://github.com/$repo/releases/download/$version/ccolon-windows-$arch.exe"
+$asset = "ccolon-windows-$arch.exe"
+$url = "https://github.com/$repo/releases/download/$version/$asset"
+$checksumsUrl = "https://github.com/$repo/releases/download/$version/checksums.txt"
 
 Write-Host "Downloading CColon $version..."
 
@@ -26,6 +28,31 @@ if (-not (Test-Path $installDir)) {
 
 $outPath = Join-Path $installDir $binaryName
 Invoke-WebRequest -Uri $url -OutFile $outPath -UseBasicParsing
+
+# Verify SHA256 checksum
+Write-Host "Verifying checksum..."
+try {
+    $checksumsPath = Join-Path $env:TEMP "ccolon_checksums.txt"
+    Invoke-WebRequest -Uri $checksumsUrl -OutFile $checksumsPath -UseBasicParsing
+    $checksumContent = Get-Content $checksumsPath
+    $expectedLine = $checksumContent | Where-Object { $_ -match $asset }
+    if ($expectedLine) {
+        $expectedHash = ($expectedLine -split '\s+')[0]
+        $actualHash = (Get-FileHash -Path $outPath -Algorithm SHA256).Hash.ToLower()
+        if ($expectedHash -ne $actualHash) {
+            Write-Error "Checksum verification FAILED!`n  Expected: $expectedHash`n  Got:      $actualHash"
+            Remove-Item $outPath -Force
+            Remove-Item $checksumsPath -Force -ErrorAction SilentlyContinue
+            exit 1
+        }
+        Write-Host "Checksum verified OK."
+    } else {
+        Write-Host "Warning: asset not found in checksums.txt, skipping verification."
+    }
+    Remove-Item $checksumsPath -Force -ErrorAction SilentlyContinue
+} catch {
+    Write-Host "Warning: checksums.txt not available for this release, skipping verification."
+}
 
 $currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
 if ($currentPath -notlike "*$installDir*") {
