@@ -8,29 +8,31 @@
       
       
       
-        <link rel="canonical" href="https://ccolon.arne.sh/">
+        <link rel="canonical" href="https://ccolon.arne.sh/getting-started/repl/">
       
       
+        <link rel="prev" href="../hello-world/">
       
-        <link rel="next" href="getting-started/installation/">
+      
+        <link rel="next" href="../../reference/variables/">
       
       
         
       
       
-      <link rel="icon" href="assets/ccolon.svg">
+      <link rel="icon" href="../../assets/ccolon.svg">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
-        <title>CColon Documentation</title>
+        <title>Interactive Shell - CColon Documentation</title>
       
     
     
-      <link rel="stylesheet" href="assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
       
         
-        <link rel="stylesheet" href="assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -49,7 +51,7 @@
       
     
     
-    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -74,7 +76,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#ccolon-c" class="md-skip">
+        <a href="#interactive-shell-repl" class="md-skip">
           Skip to content
         </a>
       
@@ -90,9 +92,9 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="." title="CColon Documentation" class="md-header__button md-logo" aria-label="CColon Documentation" data-md-component="logo">
+    <a href="../.." title="CColon Documentation" class="md-header__button md-logo" aria-label="CColon Documentation" data-md-component="logo">
       
-  <img src="assets/ccolon.svg" alt="logo">
+  <img src="../../assets/ccolon.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -109,7 +111,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Home
+              Interactive Shell
             
           </span>
         </div>
@@ -227,9 +229,9 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="." title="CColon Documentation" class="md-nav__button md-logo" aria-label="CColon Documentation" data-md-component="logo">
+    <a href="../.." title="CColon Documentation" class="md-nav__button md-logo" aria-label="CColon Documentation" data-md-component="logo">
       
-  <img src="assets/ccolon.svg" alt="logo">
+  <img src="../../assets/ccolon.svg" alt="logo">
 
     </a>
     CColon Documentation
@@ -253,37 +255,10 @@
       
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Home
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="." class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
         
   
   
@@ -299,59 +274,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#features" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Features
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#what-it-looks-like" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        What it looks like
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#getting-started" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Getting started
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -360,8 +282,10 @@
       
   
   
+    
   
   
+  
     
     
     
@@ -372,13 +296,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
         
           
           <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
@@ -399,7 +321,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -417,7 +339,7 @@
   
   
     <li class="md-nav__item">
-      <a href="getting-started/installation/" class="md-nav__link">
+      <a href="../installation/" class="md-nav__link">
         
   
   
@@ -445,7 +367,7 @@
   
   
     <li class="md-nav__item">
-      <a href="getting-started/hello-world/" class="md-nav__link">
+      <a href="../hello-world/" class="md-nav__link">
         
   
   
@@ -470,10 +392,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="getting-started/repl/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interactive Shell
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -489,6 +438,70 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#basics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Basics
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multi-line-input" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Multi-line input
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#persistent-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Persistent state
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#exiting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exiting
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -562,7 +575,7 @@
   
   
     <li class="md-nav__item">
-      <a href="reference/variables/" class="md-nav__link">
+      <a href="../../reference/variables/" class="md-nav__link">
         
   
   
@@ -590,7 +603,7 @@
   
   
     <li class="md-nav__item">
-      <a href="reference/operators/" class="md-nav__link">
+      <a href="../../reference/operators/" class="md-nav__link">
         
   
   
@@ -618,7 +631,7 @@
   
   
     <li class="md-nav__item">
-      <a href="reference/control-flow/" class="md-nav__link">
+      <a href="../../reference/control-flow/" class="md-nav__link">
         
   
   
@@ -646,7 +659,7 @@
   
   
     <li class="md-nav__item">
-      <a href="reference/functions/" class="md-nav__link">
+      <a href="../../reference/functions/" class="md-nav__link">
         
   
   
@@ -674,7 +687,7 @@
   
   
     <li class="md-nav__item">
-      <a href="reference/classes/" class="md-nav__link">
+      <a href="../../reference/classes/" class="md-nav__link">
         
   
   
@@ -702,7 +715,7 @@
   
   
     <li class="md-nav__item">
-      <a href="reference/collections/" class="md-nav__link">
+      <a href="../../reference/collections/" class="md-nav__link">
         
   
   
@@ -730,7 +743,7 @@
   
   
     <li class="md-nav__item">
-      <a href="reference/dicts/" class="md-nav__link">
+      <a href="../../reference/dicts/" class="md-nav__link">
         
   
   
@@ -758,7 +771,7 @@
   
   
     <li class="md-nav__item">
-      <a href="reference/sint/" class="md-nav__link">
+      <a href="../../reference/sint/" class="md-nav__link">
         
   
   
@@ -786,7 +799,7 @@
   
   
     <li class="md-nav__item">
-      <a href="reference/methods/" class="md-nav__link">
+      <a href="../../reference/methods/" class="md-nav__link">
         
   
   
@@ -814,7 +827,7 @@
   
   
     <li class="md-nav__item">
-      <a href="reference/error-handling/" class="md-nav__link">
+      <a href="../../reference/error-handling/" class="md-nav__link">
         
   
   
@@ -842,7 +855,7 @@
   
   
     <li class="md-nav__item">
-      <a href="reference/imports/" class="md-nav__link">
+      <a href="../../reference/imports/" class="md-nav__link">
         
   
   
@@ -870,7 +883,7 @@
   
   
     <li class="md-nav__item">
-      <a href="reference/comments/" class="md-nav__link">
+      <a href="../../reference/comments/" class="md-nav__link">
         
   
   
@@ -898,7 +911,7 @@
   
   
     <li class="md-nav__item">
-      <a href="reference/grammar/" class="md-nav__link">
+      <a href="../../reference/grammar/" class="md-nav__link">
         
   
   
@@ -987,7 +1000,7 @@
   
   
     <li class="md-nav__item">
-      <a href="stdlib/console/" class="md-nav__link">
+      <a href="../../stdlib/console/" class="md-nav__link">
         
   
   
@@ -1015,7 +1028,7 @@
   
   
     <li class="md-nav__item">
-      <a href="stdlib/math/" class="md-nav__link">
+      <a href="../../stdlib/math/" class="md-nav__link">
         
   
   
@@ -1043,7 +1056,7 @@
   
   
     <li class="md-nav__item">
-      <a href="stdlib/random/" class="md-nav__link">
+      <a href="../../stdlib/random/" class="md-nav__link">
         
   
   
@@ -1071,7 +1084,7 @@
   
   
     <li class="md-nav__item">
-      <a href="stdlib/json/" class="md-nav__link">
+      <a href="../../stdlib/json/" class="md-nav__link">
         
   
   
@@ -1099,7 +1112,7 @@
   
   
     <li class="md-nav__item">
-      <a href="stdlib/fs/" class="md-nav__link">
+      <a href="../../stdlib/fs/" class="md-nav__link">
         
   
   
@@ -1127,7 +1140,7 @@
   
   
     <li class="md-nav__item">
-      <a href="stdlib/datetime/" class="md-nav__link">
+      <a href="../../stdlib/datetime/" class="md-nav__link">
         
   
   
@@ -1155,7 +1168,7 @@
   
   
     <li class="md-nav__item">
-      <a href="stdlib/os/" class="md-nav__link">
+      <a href="../../stdlib/os/" class="md-nav__link">
         
   
   
@@ -1183,7 +1196,7 @@
   
   
     <li class="md-nav__item">
-      <a href="stdlib/http/" class="md-nav__link">
+      <a href="../../stdlib/http/" class="md-nav__link">
         
   
   
@@ -1272,7 +1285,7 @@
   
   
     <li class="md-nav__item">
-      <a href="tools/formatter/" class="md-nav__link">
+      <a href="../../tools/formatter/" class="md-nav__link">
         
   
   
@@ -1300,7 +1313,7 @@
   
   
     <li class="md-nav__item">
-      <a href="tools/bytecode/" class="md-nav__link">
+      <a href="../../tools/bytecode/" class="md-nav__link">
         
   
   
@@ -1328,7 +1341,7 @@
   
   
     <li class="md-nav__item">
-      <a href="tools/packages/" class="md-nav__link">
+      <a href="../../tools/packages/" class="md-nav__link">
         
   
   
@@ -1363,7 +1376,7 @@
   
   
     <li class="md-nav__item">
-      <a href="examples/" class="md-nav__link">
+      <a href="../../examples/" class="md-nav__link">
         
   
   
@@ -1410,10 +1423,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#features" class="md-nav__link">
+  <a href="#basics" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Features
+        Basics
       
     </span>
   </a>
@@ -1421,10 +1434,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#what-it-looks-like" class="md-nav__link">
+  <a href="#multi-line-input" class="md-nav__link">
     <span class="md-ellipsis">
       
-        What it looks like
+        Multi-line input
       
     </span>
   </a>
@@ -1432,10 +1445,21 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#getting-started" class="md-nav__link">
+  <a href="#persistent-state" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Getting started
+        Persistent state
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#exiting" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Exiting
       
     </span>
   </a>
@@ -1462,48 +1486,37 @@
   
 
 
-<p align="center">
-  <img src="assets/ccolon.svg" alt="CColon Logo" width="180">
-</p>
-
-<h1 id="ccolon-c">CColon (C:)</h1>
-<p>CColon is a bytecode-compiled programming language built in Go. It takes the readability of Python, the structure of Go, the expressiveness of Kotlin, and wraps it all into a language that is genuinely enjoyable to write.</p>
-<p>CColon compiles source code to bytecode and executes it on a stack-based virtual machine. Go's garbage collector handles memory management, so you never have to think about it.</p>
-<h2 id="features">Features</h2>
-<ul>
-<li><strong>Clean syntax</strong> with Python-like readability</li>
-<li><strong>Bytecode VM</strong> for fast execution</li>
-<li><strong>Garbage collected</strong> through Go's runtime</li>
-<li><strong>Dynamic lists</strong> and <strong>fixed-size arrays</strong></li>
-<li><strong>First-class functions</strong> with parameters and return values</li>
-<li><strong>Interactive REPL</strong> for quick experimentation</li>
-<li><strong>Cross-platform</strong> binaries for Linux, macOS, and Windows</li>
-</ul>
-<h2 id="what-it-looks-like">What it looks like</h2>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>import console
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>function factorial(int n) int {
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    if (n &lt;= 1) {
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>        return 1
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    }
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    return n * factorial(n - 1)
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>}
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>function main() {
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    var string name = &quot;CColon&quot;
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    console.println(&quot;Welcome to &quot; + name + &quot;!&quot;)
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    for i in range(1, 8) {
-<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>        console.println(i.tostring() + &quot;! = &quot; + factorial(i).tostring())
-<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>    }
-<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>
-<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>    var list scores = [95, 87, 92, 78]
-<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>    scores.append(100)
-<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>    console.println(&quot;Scores: &quot; + scores.tostring())
-<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>}
+<h1 id="interactive-shell-repl">Interactive Shell (REPL)</h1>
+<p>Run <code>ccolon</code> with no arguments to start the interactive shell:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>$ ccolon
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>CColon v0.1.0 - Interactive Mode
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>Type &#39;exit&#39; to quit.
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>c: &gt;
 </code></pre></div>
-<h2 id="getting-started">Getting started</h2>
-<p>Head over to the <a href="getting-started/installation/">Installation</a> page to get CColon on your machine, then check out the <a href="getting-started/hello-world/">Hello World</a> guide.</p>
+<h2 id="basics">Basics</h2>
+<p>You can type any CColon statement or expression directly:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>c: &gt; import console
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>c: &gt; var int x = 42
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>c: &gt; console.println(x.tostring())
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>42
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>c: &gt; x = x + 8
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>c: &gt; console.println(x.tostring())
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>50
+</code></pre></div>
+<h2 id="multi-line-input">Multi-line input</h2>
+<p>When you type a line that opens a block with <code>{</code>, the REPL waits for the closing <code>}</code> before executing:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>c: &gt; function square(int n) int {
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>...      return n * n
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>...  }
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>c: &gt; console.println(square(7).tostring())
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>49
+</code></pre></div>
+<p>The <code>...</code> prompt indicates that the REPL is waiting for more input.</p>
+<h2 id="persistent-state">Persistent state</h2>
+<p>Variables, functions, and imports persist across lines within the same session. Define a function once and call it as many times as you want.</p>
+<h2 id="exiting">Exiting</h2>
+<p>Type <code>exit</code> or press <code>Ctrl+D</code> to quit.</p>
 
 
 
@@ -1559,10 +1572,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": ".", "features": ["navigation.sections", "navigation.expand", "navigation.top", "content.code.copy", "search.suggest"], "search": "assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.expand", "navigation.top", "content.code.copy", "search.suggest"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
-      <script src="assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
   </body>
