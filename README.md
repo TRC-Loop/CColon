@@ -30,7 +30,7 @@ curl -fsSL https://raw.githubusercontent.com/TRC-Loop/CColon/main/install.sh | s
 Or specify a version:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/TRC-Loop/CColon/main/install.sh | sh -s v0.1.0
+curl -fsSL https://raw.githubusercontent.com/TRC-Loop/CColon/main/install.sh | sh -s v1.0.0
 ```
 
 ### Windows (PowerShell)
@@ -59,11 +59,11 @@ sudo mv ccolon /usr/local/bin/
 
 ### Interactive Shell
 
-Run `ccolon` with no arguments to start the REPL:
+Run `ccolon` with no arguments to start the REPL (with readline, history, and tab completion):
 
 ```
 $ ccolon
-CColon v0.1.0 - Interactive Mode
+CColon v1.0.0 - Interactive Mode
 Type 'exit' to quit.
 
 c: > import console
@@ -87,28 +87,38 @@ function main() {
 }
 ```
 
+## Features
+
+| Feature | Description |
+|---|---|
+| **Bytecode compiled** | Compiles to bytecode, runs on a stack-based VM |
+| **Static types** | `int`, `float`, `string`, `bool`, `list`, `array`, `dict`, `sint` |
+| **Classes** | Inheritance, constructors, public/private fields and methods |
+| **Error handling** | `try/catch/throw` with custom error classes |
+| **File imports** | `import "file.ccl"` for multi-file projects |
+| **Arbitrary precision** | `sint` type for unlimited-size integers (like Python) |
+| **Code formatter** | `ccolon fmt` with configurable `.ccolonfmt` |
+| **Bytecode files** | `ccolon compile` to `.cclb`, `ccolon file.cclb` to run |
+| **Package manager** | `ccolon pkg install` from any GitHub repo |
+| **Rich REPL** | Readline, history, tab completion, colored output |
+| **Standard library** | console, math, random, json, fs, datetime, os, http |
+
 ## Language Overview
 
 CColon source files use the `.ccl` extension.
 
 ### Types
 
-| Type    | Description            | Example                        |
-|---------|------------------------|--------------------------------|
-| `int`   | 64-bit integer         | `var int x = 42`               |
-| `float` | 64-bit float           | `var float pi = 3.14`          |
-| `string`| Text                   | `var string s = "hello"`       |
-| `bool`  | Boolean                | `var bool ok = true`           |
-| `list`  | Dynamic list           | `var list a = [1, 2, 3]`      |
-| `array` | Fixed-size array       | `var array a = fixed([1, 2])` |
-
-### Variables
-
-```
-var int count = 0
-var string name = "CColon"
-count = count + 1
-```
+| Type | Description | Example |
+|---|---|---|
+| `int` | 64-bit integer | `var int x = 42` |
+| `sint` | Arbitrary precision integer | `var sint x = 99999999999999999999` |
+| `float` | 64-bit float | `var float pi = 3.14` |
+| `string` | Text | `var string s = "hello"` |
+| `bool` | Boolean | `var bool ok = true` |
+| `list` | Dynamic list | `var list a = [1, 2, 3]` |
+| `array` | Fixed-size array | `var array a = fixed([1, 2])` |
+| `dict` | Dictionary | `var dict d = {"a": 1}` |
 
 ### Functions
 
@@ -117,12 +127,34 @@ function add(int a, int b) int {
     return a + b
 }
 
-function greet(string name) {
-    console.println("Hello, " + name + "!")
+function greet(string name, string prefix = "Hello") {
+    console.println(prefix + ", " + name + "!")
 }
 ```
 
-The `main()` function is automatically called as the entry point.
+### Classes
+
+```
+class Dog {
+    var public string name = ""
+    public function init(string name) {
+        self.name = name
+    }
+    public function speak() string {
+        return self.name + " barks!"
+    }
+}
+```
+
+### Error Handling
+
+```
+try {
+    throw Error("something went wrong")
+} catch (Error e) {
+    console.println("caught: " + e.message)
+}
+```
 
 ### Control Flow
 
@@ -141,41 +173,21 @@ for i in range(5) {
     console.println(i.tostring())
 }
 
-for i in range(2, 8) {
-    console.println(i.tostring())
+for item in items {
+    console.println(item)
 }
 ```
 
-### Lists and Arrays
+## Tools
 
+```sh
+ccolon file.ccl              # Run a source file
+ccolon file.cclb             # Run a compiled bytecode file
+ccolon fmt file.ccl           # Format source code
+ccolon compile file.ccl       # Compile to bytecode
+ccolon pkg install <url>      # Install a package
+ccolon pkg list               # List installed packages
 ```
-var list items = [1, 2, 3]
-items.append(4)
-console.println(items[0].tostring())
-console.println(items.length().tostring())
-
-var array coords = fixed([10, 20, 30])
-console.println(coords[1].tostring())
-```
-
-### Methods on Values
-
-```
-var int n = 42
-console.println(n.tostring())
-console.println(n.tofloat().tostring())
-
-var string s = "hello"
-console.println(s.length().tostring())
-```
-
-### Imports
-
-```
-import console
-```
-
-The `console` module provides `println`, `print`, and `scanp` for terminal I/O.
 
 For the full language reference, see the [documentation](https://ccolon.arne.sh/).
 
@@ -185,6 +197,6 @@ For the full language reference, see the [documentation](https://ccolon.arne.sh/
 
 ## Logo
 
-You might want to rotate the logo by 90°.
+You might want to rotate the logo by 90.
 
 This is a happy language indeed.
