@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"math/big"
 	"strings"
 
 	"github.com/TRC-Loop/ccolon/compiler"
@@ -234,6 +235,8 @@ func (vm *VM) execute() error {
 					continue
 				}
 				vm.push(&IntValue{Val: -val.Val})
+			case *SintValue:
+				vm.push(&SintValue{Val: new(big.Int).Neg(val.Val)})
 			case *FloatValue:
 				vm.push(&FloatValue{Val: -val.Val})
 			default:
@@ -571,6 +574,8 @@ func (vm *VM) wrapConstant(c interface{}) Value {
 	switch v := c.(type) {
 	case int64:
 		return &IntValue{Val: v}
+	case *big.Int:
+		return &SintValue{Val: v}
 	case float64:
 		return &FloatValue{Val: v}
 	case string:
@@ -726,7 +731,29 @@ func (vm *VM) instantiateClass(class *ClassValue, argCount int) error {
 	return nil
 }
 
+// toBigInt converts int or sint to *big.Int, returns nil if not numeric integer.
+func toBigInt(v Value) *big.Int {
+	switch val := v.(type) {
+	case *IntValue:
+		return big.NewInt(val.Val)
+	case *SintValue:
+		return new(big.Int).Set(val.Val)
+	}
+	return nil
+}
+
 func (vm *VM) opAdd(a, b Value) (Value, error) {
+	// sint promotion: if either side is sint, promote both
+	if _, ok := a.(*SintValue); ok {
+		if bb := toBigInt(b); bb != nil {
+			return &SintValue{Val: new(big.Int).Add(toBigInt(a), bb)}, nil
+		}
+	}
+	if _, ok := b.(*SintValue); ok {
+		if ab := toBigInt(a); ab != nil {
+			return &SintValue{Val: new(big.Int).Add(ab, toBigInt(b))}, nil
+		}
+	}
 	switch av := a.(type) {
 	case *IntValue:
 		switch bv := b.(type) {
@@ -754,6 +781,26 @@ func (vm *VM) opAdd(a, b Value) (Value, error) {
 }
 
 func (vm *VM) opArith(a, b Value, op string) (Value, error) {
+	// sint promotion
+	ab, bb := toBigInt(a), toBigInt(b)
+	if ab != nil && bb != nil {
+		if _, isSint := a.(*SintValue); isSint {
+			switch op {
+			case "-":
+				return &SintValue{Val: new(big.Int).Sub(ab, bb)}, nil
+			case "*":
+				return &SintValue{Val: new(big.Int).Mul(ab, bb)}, nil
+			}
+		}
+		if _, isSint := b.(*SintValue); isSint {
+			switch op {
+			case "-":
+				return &SintValue{Val: new(big.Int).Sub(ab, bb)}, nil
+			case "*":
+				return &SintValue{Val: new(big.Int).Mul(ab, bb)}, nil
+			}
+		}
+	}
 	switch av := a.(type) {
 	case *IntValue:
 		switch bv := b.(type) {
@@ -802,6 +849,22 @@ func (vm *VM) opArith(a, b Value, op string) (Value, error) {
 }
 
 func (vm *VM) opDiv(a, b Value) (Value, error) {
+	// sint division
+	ab, bb := toBigInt(a), toBigInt(b)
+	if ab != nil && bb != nil {
+		if _, ok := a.(*SintValue); ok {
+			if bb.Sign() == 0 {
+				return nil, vm.runtimeError("division by zero")
+			}
+			return &SintValue{Val: new(big.Int).Div(ab, bb)}, nil
+		}
+		if _, ok := b.(*SintValue); ok {
+			if bb.Sign() == 0 {
+				return nil, vm.runtimeError("division by zero")
+			}
+			return &SintValue{Val: new(big.Int).Div(ab, bb)}, nil
+		}
+	}
 	switch av := a.(type) {
 	case *IntValue:
 		switch bv := b.(type) {
@@ -834,6 +897,18 @@ func (vm *VM) opDiv(a, b Value) (Value, error) {
 }
 
 func (vm *VM) opMod(a, b Value) (Value, error) {
+	// sint modulo
+	ab, bb := toBigInt(a), toBigInt(b)
+	if ab != nil && bb != nil {
+		_, aIsSint := a.(*SintValue)
+		_, bIsSint := b.(*SintValue)
+		if aIsSint || bIsSint {
+			if bb.Sign() == 0 {
+				return nil, vm.runtimeError("modulo by zero")
+			}
+			return &SintValue{Val: new(big.Int).Mod(ab, bb)}, nil
+		}
+	}
 	ai, aOk := a.(*IntValue)
 	bi, bOk := b.(*IntValue)
 	if aOk && bOk {
@@ -846,6 +921,26 @@ func (vm *VM) opMod(a, b Value) (Value, error) {
 }
 
 func (vm *VM) opCompare(a, b Value, op compiler.OpCode) (*BoolValue, error) {
+	// sint comparison
+	ab, bb := toBigInt(a), toBigInt(b)
+	_, aIsSint := a.(*SintValue)
+	_, bIsSint := b.(*SintValue)
+	if (aIsSint || bIsSint) && ab != nil && bb != nil {
+		cmp := ab.Cmp(bb)
+		var result bool
+		switch op {
+		case compiler.OP_LT:
+			result = cmp < 0
+		case compiler.OP_GT:
+			result = cmp > 0
+		case compiler.OP_LTE:
+			result = cmp <= 0
+		case compiler.OP_GTE:
+			result = cmp >= 0
+		}
+		return &BoolValue{Val: result}, nil
+	}
+
 	var af, bf float64
 	switch av := a.(type) {
 	case *IntValue:
@@ -978,6 +1073,8 @@ func (vm *VM) invokeMethod(object Value, method string, args []Value) (Value, er
 	switch obj := object.(type) {
 	case *IntValue:
 		return vm.intMethod(obj, method, args)
+	case *SintValue:
+		return vm.sintMethod(obj, method, args)
 	case *FloatValue:
 		return vm.floatMethod(obj, method, args)
 	case *StringValue:
@@ -1003,8 +1100,38 @@ func (vm *VM) intMethod(v *IntValue, method string, args []Value) (Value, error)
 		return &StringValue{Val: v.String()}, nil
 	case "tofloat":
 		return &FloatValue{Val: float64(v.Val)}, nil
+	case "tosint":
+		return &SintValue{Val: big.NewInt(v.Val)}, nil
 	default:
 		return nil, vm.runtimeError("int has no method '%s'", method)
+	}
+}
+
+func (vm *VM) sintMethod(v *SintValue, method string, args []Value) (Value, error) {
+	switch method {
+	case "tostring":
+		return &StringValue{Val: v.Val.String()}, nil
+	case "toint":
+		if v.Val.IsInt64() {
+			return &IntValue{Val: v.Val.Int64()}, nil
+		}
+		return nil, vm.runtimeError("sint value too large for int")
+	case "tofloat":
+		f, _ := new(big.Float).SetInt(v.Val).Float64()
+		return &FloatValue{Val: f}, nil
+	case "abs":
+		return &SintValue{Val: new(big.Int).Abs(v.Val)}, nil
+	case "pow":
+		if len(args) != 1 {
+			return nil, vm.runtimeError("sint.pow() takes 1 argument")
+		}
+		exp := toBigInt(args[0])
+		if exp == nil {
+			return nil, vm.runtimeError("sint.pow() requires an integer exponent")
+		}
+		return &SintValue{Val: new(big.Int).Exp(v.Val, exp, nil)}, nil
+	default:
+		return nil, vm.runtimeError("sint has no method '%s'", method)
 	}
 }
 
@@ -1039,6 +1166,12 @@ func (vm *VM) stringMethod(v *StringValue, method string, args []Value) (Value, 
 			return nil, vm.runtimeError("cannot convert '%s' to float", v.Val)
 		}
 		return &FloatValue{Val: f}, nil
+	case "tosint":
+		bi := new(big.Int)
+		if _, ok := bi.SetString(v.Val, 10); !ok {
+			return nil, vm.runtimeError("cannot convert '%s' to sint", v.Val)
+		}
+		return &SintValue{Val: bi}, nil
 	case "split":
 		sep := ""
 		if len(args) > 0 {

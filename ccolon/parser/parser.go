@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"math/big"
 	"strconv"
 
 	"github.com/TRC-Loop/ccolon/lexer"
@@ -438,7 +439,12 @@ func (p *Parser) parsePrefix() (Expr, error) {
 		p.advance()
 		val, err := strconv.ParseInt(tok.Literal, 10, 64)
 		if err != nil {
-			return nil, fmt.Errorf("line %d:%d: invalid integer '%s'", tok.Line, tok.Col, tok.Literal)
+			// too large for int64, use sint (arbitrary precision)
+			bigVal := new(big.Int)
+			if _, ok := bigVal.SetString(tok.Literal, 10); !ok {
+				return nil, fmt.Errorf("line %d:%d: invalid integer '%s'", tok.Line, tok.Col, tok.Literal)
+			}
+			return &SintLiteral{Value: bigVal, P: Position{tok.Line, tok.Col}}, nil
 		}
 		return &IntLiteral{Value: val, P: Position{tok.Line, tok.Col}}, nil
 

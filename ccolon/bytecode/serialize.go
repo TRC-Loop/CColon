@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math"
+	"math/big"
 
 	"github.com/TRC-Loop/ccolon/compiler"
 )
@@ -20,6 +21,7 @@ const (
 	tagString   byte = 3
 	tagFunc     byte = 4
 	tagClassDef byte = 5
+	tagBigInt   byte = 6
 )
 
 // Encode serializes a FuncObject into a portable binary format.
@@ -171,6 +173,12 @@ func (w *writer) writeConstant(val interface{}) error {
 		if err := w.writeClassDef(v); err != nil {
 			return err
 		}
+	case *big.Int:
+		w.writeByte(tagBigInt)
+		b := v.Bytes()
+		w.writeByte(byte(v.Sign() + 1)) // 0=negative, 1=zero, 2=positive
+		w.writeUint32(uint32(len(b)))
+		w.writeBytes(b)
 	default:
 		return fmt.Errorf("cannot serialize constant of type %T", val)
 	}
@@ -381,6 +389,24 @@ func (r *reader) readConstant() (interface{}, error) {
 		return r.readFunc()
 	case tagClassDef:
 		return r.readClassDef()
+	case tagBigInt:
+		sign, err := r.readByte()
+		if err != nil {
+			return nil, err
+		}
+		length, err := r.readUint32()
+		if err != nil {
+			return nil, err
+		}
+		b, err := r.readN(int(length))
+		if err != nil {
+			return nil, err
+		}
+		v := new(big.Int).SetBytes(b)
+		if sign == 0 {
+			v.Neg(v)
+		}
+		return v, nil
 	default:
 		return nil, fmt.Errorf("unknown constant tag %d at offset %d", tag, r.pos)
 	}

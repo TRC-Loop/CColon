@@ -3,6 +3,7 @@ package vm
 import (
 	"bufio"
 	"fmt"
+	"math/big"
 	"os"
 	"strings"
 
@@ -26,6 +27,7 @@ const (
 	VAL_INSTANCE
 	VAL_DICT
 	VAL_FILE
+	VAL_SINT
 )
 
 type Value interface {
@@ -35,6 +37,7 @@ type Value interface {
 
 type NilValue struct{}
 type IntValue struct{ Val int64 }
+type SintValue struct{ Val *big.Int }
 type FloatValue struct{ Val float64 }
 type BoolValue struct{ Val bool }
 type StringValue struct{ Val string }
@@ -91,6 +94,7 @@ type FileValue struct {
 
 func (v *NilValue) Type() ValueType        { return VAL_NIL }
 func (v *IntValue) Type() ValueType         { return VAL_INT }
+func (v *SintValue) Type() ValueType       { return VAL_SINT }
 func (v *FloatValue) Type() ValueType       { return VAL_FLOAT }
 func (v *BoolValue) Type() ValueType        { return VAL_BOOL }
 func (v *StringValue) Type() ValueType      { return VAL_STRING }
@@ -106,6 +110,7 @@ func (v *FileValue) Type() ValueType        { return VAL_FILE }
 
 func (v *NilValue) String() string    { return "nil" }
 func (v *IntValue) String() string    { return fmt.Sprintf("%d", v.Val) }
+func (v *SintValue) String() string   { return v.Val.String() }
 func (v *FloatValue) String() string  { return fmt.Sprintf("%g", v.Val) }
 func (v *BoolValue) String() string   { return fmt.Sprintf("%t", v.Val) }
 func (v *StringValue) String() string { return v.Val }
@@ -201,6 +206,8 @@ func IsTruthy(v Value) bool {
 		return val.Val
 	case *IntValue:
 		return val.Val != 0
+	case *SintValue:
+		return val.Val.Sign() != 0
 	case *FloatValue:
 		return val.Val != 0
 	case *StringValue:
@@ -222,15 +229,23 @@ func IsTruthy(v Value) bool {
 
 func ValuesEqual(a, b Value) bool {
 	if a.Type() != b.Type() {
-		// int/float cross-comparison
+		// int/float/sint cross-comparison
 		if ai, ok := a.(*IntValue); ok {
 			if bf, ok := b.(*FloatValue); ok {
 				return float64(ai.Val) == bf.Val
+			}
+			if bs, ok := b.(*SintValue); ok {
+				return bs.Val.Cmp(big.NewInt(ai.Val)) == 0
 			}
 		}
 		if af, ok := a.(*FloatValue); ok {
 			if bi, ok := b.(*IntValue); ok {
 				return af.Val == float64(bi.Val)
+			}
+		}
+		if as, ok := a.(*SintValue); ok {
+			if bi, ok := b.(*IntValue); ok {
+				return as.Val.Cmp(big.NewInt(bi.Val)) == 0
 			}
 		}
 		return false
@@ -240,6 +255,8 @@ func ValuesEqual(a, b Value) bool {
 		return true
 	case *IntValue:
 		return av.Val == b.(*IntValue).Val
+	case *SintValue:
+		return av.Val.Cmp(b.(*SintValue).Val) == 0
 	case *FloatValue:
 		return av.Val == b.(*FloatValue).Val
 	case *BoolValue:

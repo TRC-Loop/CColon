@@ -249,6 +249,8 @@ func (f *fmtWriter) formatExpr(expr parser.Expr) string {
 	switch e := expr.(type) {
 	case *parser.IntLiteral:
 		return intToStr(e.Value)
+	case *parser.SintLiteral:
+		return e.Value.String()
 	case *parser.FloatLiteral:
 		return floatToStr(e.Value)
 	case *parser.StringLiteral:

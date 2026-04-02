@@ -219,6 +219,8 @@ func (c *Compiler) compileFuncDecl(s *parser.FuncDecl) error {
 			switch d := p.Default.(type) {
 			case *parser.IntLiteral:
 				defaults[i] = d.Value
+			case *parser.SintLiteral:
+				defaults[i] = d.Value
 			case *parser.FloatLiteral:
 				defaults[i] = d.Value
 			case *parser.StringLiteral:
@@ -543,6 +545,8 @@ func (c *Compiler) compileExpr(expr parser.Expr) error {
 	switch e := expr.(type) {
 	case *parser.IntLiteral:
 		c.emitConstant(e.Value, e.P.Line)
+	case *parser.SintLiteral:
+		c.emitConstant(e.Value, e.P.Line)
 	case *parser.FloatLiteral:
 		c.emitConstant(e.Value, e.P.Line)
 	case *parser.StringLiteral:
@@ -815,6 +819,8 @@ func (c *Compiler) compileClassDecl(s *parser.ClassDecl) error {
 			switch d := f.Default.(type) {
 			case *parser.IntLiteral:
 				defaultVal = d.Value
+			case *parser.SintLiteral:
+				defaultVal = d.Value
 			case *parser.FloatLiteral:
 				defaultVal = d.Value
 			case *parser.StringLiteral:
@@ -857,6 +863,8 @@ func (c *Compiler) compileClassDecl(s *parser.ClassDecl) error {
 			if p.Default != nil {
 				switch d := p.Default.(type) {
 				case *parser.IntLiteral:
+					defaults[i+1] = d.Value
+				case *parser.SintLiteral:
 					defaults[i+1] = d.Value
 				case *parser.FloatLiteral:
 					defaults[i+1] = d.Value

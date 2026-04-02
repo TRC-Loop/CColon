@@ -1,6 +1,10 @@
 package parser
 
-import "github.com/TRC-Loop/ccolon/lexer"
+import (
+	"math/big"
+
+	"github.com/TRC-Loop/ccolon/lexer"
+)
 
 type Position struct {
 	Line int
@@ -25,6 +29,11 @@ type Stmt interface {
 
 type IntLiteral struct {
 	Value int64
+	P     Position
+}
+
+type SintLiteral struct {
+	Value *big.Int
 	P     Position
 }
 
@@ -119,6 +128,7 @@ type DictLiteral struct {
 }
 
 func (n *IntLiteral) Pos() Position        { return n.P }
+func (n *SintLiteral) Pos() Position       { return n.P }
 func (n *FloatLiteral) Pos() Position      { return n.P }
 func (n *StringLiteral) Pos() Position     { return n.P }
 func (n *BoolLiteral) Pos() Position       { return n.P }
@@ -137,6 +147,7 @@ func (n *SuperCallExpr) Pos() Position      { return n.P }
 func (n *DictLiteral) Pos() Position        { return n.P }
 
 func (n *IntLiteral) exprNode()        {}
+func (n *SintLiteral) exprNode()       {}
 func (n *FloatLiteral) exprNode()      {}
 func (n *StringLiteral) exprNode()     {}
 func (n *BoolLiteral) exprNode()       {}

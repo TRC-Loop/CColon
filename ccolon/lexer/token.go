@@ -50,6 +50,7 @@ const (
 	TOKEN_TYPE_LIST
 	TOKEN_TYPE_ARRAY
 	TOKEN_TYPE_DICT
+	TOKEN_TYPE_SINT
 
 	// Built-in functions
 	TOKEN_RANGE
@@ -117,6 +118,7 @@ var keywords = map[string]TokenType{
 	"list":     TOKEN_TYPE_LIST,
 	"array":    TOKEN_TYPE_ARRAY,
 	"dict":     TOKEN_TYPE_DICT,
+	"sint":     TOKEN_TYPE_SINT,
 	"range":    TOKEN_RANGE,
 	"fixed":    TOKEN_FIXED,
 }
@@ -147,7 +149,7 @@ var tokenNames = map[TokenType]string{
 	TOKEN_WITH: "with", TOKEN_AS: "as",
 	TOKEN_TYPE_STRING: "string", TOKEN_TYPE_INT: "int", TOKEN_TYPE_FLOAT: "float",
 	TOKEN_TYPE_BOOL: "bool", TOKEN_TYPE_LIST: "list", TOKEN_TYPE_ARRAY: "array",
-	TOKEN_TYPE_DICT: "dict",
+	TOKEN_TYPE_DICT: "dict", TOKEN_TYPE_SINT: "sint",
 	TOKEN_RANGE: "range", TOKEN_FIXED: "fixed",
 	TOKEN_PLUS: "+", TOKEN_MINUS: "-", TOKEN_STAR: "*", TOKEN_SLASH: "/",
 	TOKEN_PERCENT: "%", TOKEN_ASSIGN: "=", TOKEN_EQ: "==", TOKEN_NEQ: "!=",
@@ -165,7 +167,7 @@ func (t TokenType) String() string {
 }
 
 func IsTypeKeyword(t TokenType) bool {
-	return t >= TOKEN_TYPE_STRING && t <= TOKEN_TYPE_DICT
+	return t >= TOKEN_TYPE_STRING && t <= TOKEN_TYPE_SINT
 }
 
 func IsClassTypeKeyword(t TokenType) bool {
