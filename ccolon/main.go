@@ -11,6 +11,7 @@ import (
 	"github.com/TRC-Loop/ccolon/formatter"
 	"github.com/TRC-Loop/ccolon/lexer"
 	"github.com/TRC-Loop/ccolon/parser"
+	"github.com/TRC-Loop/ccolon/pkg"
 	"github.com/TRC-Loop/ccolon/repl"
 	"github.com/TRC-Loop/ccolon/stdlib"
 	"github.com/TRC-Loop/ccolon/vm"
@@ -36,6 +37,8 @@ func main() {
 		runFormatter(os.Args[2:])
 	case "compile":
 		runCompile(os.Args[2:])
+	case "pkg":
+		runPkg(os.Args[2:])
 	default:
 		filePath := os.Args[1]
 		absPath, err := filepath.Abs(filePath)
@@ -69,10 +72,14 @@ func printHelp() {
 	fmt.Println("Usage: ccolon [command] [options]")
 	fmt.Println()
 	fmt.Println("Commands:")
-	fmt.Println("  <file.ccl>       Run a CColon source file")
-	fmt.Println("  <file.cclb>      Run a compiled bytecode file")
-	fmt.Println("  fmt <file.ccl>   Format a source file")
-	fmt.Println("  compile <file>   Compile to bytecode (.cclb)")
+	fmt.Println("  <file.ccl>              Run a CColon source file")
+	fmt.Println("  <file.cclb>             Run a compiled bytecode file")
+	fmt.Println("  fmt <file.ccl>          Format a source file")
+	fmt.Println("  compile <file>          Compile to bytecode (.cclb)")
+	fmt.Println("  pkg install <url[@ver]> Install a package from GitHub")
+	fmt.Println("  pkg remove <name>       Remove an installed package")
+	fmt.Println("  pkg list                List installed packages")
+	fmt.Println("  pkg init                Create a ccolon.json")
 	fmt.Println()
 	fmt.Println("Options:")
 	fmt.Println("  --version, -v    Print version")
@@ -166,6 +173,54 @@ func runCompile(args []string) {
 			fatal(err)
 		}
 		fmt.Printf("compiled %s -> %s\n", f, outPath)
+	}
+}
+
+// --- Package Manager ---
+
+func runPkg(args []string) {
+	if len(args) == 0 {
+		fmt.Fprintln(os.Stderr, "usage: ccolon pkg <install|remove|list|init> [args]")
+		os.Exit(1)
+	}
+
+	switch args[0] {
+	case "install":
+		if len(args) < 2 {
+			fmt.Fprintln(os.Stderr, "usage: ccolon pkg install <github-url[@version]>")
+			os.Exit(1)
+		}
+		repoURL, version := pkg.ParseInstallArg(args[1])
+		if err := pkg.Install(repoURL, version); err != nil {
+			fatal(err)
+		}
+	case "remove":
+		if len(args) < 2 {
+			fmt.Fprintln(os.Stderr, "usage: ccolon pkg remove <name>")
+			os.Exit(1)
+		}
+		if err := pkg.Remove(args[1]); err != nil {
+			fatal(err)
+		}
+	case "list":
+		packages, err := pkg.List()
+		if err != nil {
+			fatal(err)
+		}
+		if len(packages) == 0 {
+			fmt.Println("no packages installed")
+			return
+		}
+		for _, p := range packages {
+			fmt.Printf("  %s@%s  (%s)\n", p.Name, p.Version, p.Path)
+		}
+	case "init":
+		if err := pkg.Init(); err != nil {
+			fatal(err)
+		}
+	default:
+		fmt.Fprintf(os.Stderr, "unknown pkg command: %s\n", args[0])
+		os.Exit(1)
 	}
 }
 

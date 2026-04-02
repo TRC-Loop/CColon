@@ -58,7 +58,7 @@ keyword = "var" | "function" | "return" | "if" | "else"
 Type keywords are a subset of keywords that name built-in types. An identifier (class name) is also accepted wherever a type is expected.
 
 ```
-type_keyword = "string" | "int" | "float" | "bool" | "list" | "array" | "dict" ;
+type_keyword = "string" | "int" | "sint" | "float" | "bool" | "list" | "array" | "dict" ;
 type_name    = type_keyword | identifier ;
 ```
 

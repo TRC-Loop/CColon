@@ -501,6 +501,75 @@ console.println((not true).tostring())
 `, "false\ntrue\nfalse")
 }
 
+// --- Sint ---
+
+func TestSintLiteral(t *testing.T) {
+	runExpect(t, `
+import console
+var sint x = 99999999999999999999999999999999
+console.println(x.tostring())
+`, "99999999999999999999999999999999")
+}
+
+func TestSintArithmetic(t *testing.T) {
+	runExpect(t, `
+import console
+var sint a = 99999999999999999999
+var sint b = 1
+console.println((a + b).tostring())
+console.println((a * b).tostring())
+console.println((a - b).tostring())
+`, "100000000000000000000\n99999999999999999999\n99999999999999999998")
+}
+
+func TestSintIntPromotion(t *testing.T) {
+	runExpect(t, `
+import console
+var sint big = 99999999999999999999
+var int small = 1
+console.println((big + small).tostring())
+`, "100000000000000000000")
+}
+
+func TestSintComparison(t *testing.T) {
+	runExpect(t, `
+import console
+var sint a = 99999999999999999999
+var sint b = 99999999999999999998
+console.println((a > b).tostring())
+console.println((a == b).tostring())
+`, "true\nfalse")
+}
+
+func TestSintMethods(t *testing.T) {
+	runExpect(t, `
+import console
+var sint x = 42.tosint()
+console.println(x.tostring())
+console.println(x.toint().tostring())
+console.println(x.abs().tostring())
+var sint neg = -99999999999999999999
+console.println(neg.abs().tostring())
+`, "42\n42\n42\n99999999999999999999")
+}
+
+func TestSintFromString(t *testing.T) {
+	runExpect(t, `
+import console
+var sint x = "123456789012345678901234567890".tosint()
+console.println(x.tostring())
+`, "123456789012345678901234567890")
+}
+
+func TestSintPow(t *testing.T) {
+	runExpect(t, `
+import console
+var sint base = 2.tosint()
+var sint result = base.pow(100.tosint())
+console.println(result.tostring())
+`, "1267650600228229401496703205376")
+}
+
 func TestStringEscapes(t *testing.T) {
 	runExpect(t, `
 import console

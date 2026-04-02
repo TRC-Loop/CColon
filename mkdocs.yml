@@ -41,17 +41,30 @@ nav:
     - Classes: reference/classes.md
     - Lists and Arrays: reference/collections.md
     - Dictionaries: reference/dicts.md
+    - Safe Integers (sint): reference/sint.md
     - Methods on Values: reference/methods.md
     - Error Handling: reference/error-handling.md
     - Imports and Modules: reference/imports.md
     - Comments: reference/comments.md
+    - Grammar (EBNF): reference/grammar.md
   - Standard Library:
     - console: stdlib/console.md
     - math: stdlib/math.md
     - random: stdlib/random.md
     - json: stdlib/json.md
     - fs: stdlib/fs.md
+    - datetime: stdlib/datetime.md
+    - os: stdlib/os.md
+    - http: stdlib/http.md
+  - Tools:
+    - Formatter: tools/formatter.md
+    - Bytecode Compiler: tools/bytecode.md
+    - Package Manager: tools/packages.md
   - Examples: examples.md
+
+extra:
+  version:
+    provider: mike
 
 markdown_extensions:
   - pymdownx.highlight:
