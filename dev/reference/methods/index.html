@@ -822,6 +822,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#sint-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sint methods
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#bool-methods" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1538,6 +1549,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#sint-methods" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        sint methods
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#bool-methods" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1634,11 +1656,17 @@
 <td>Convert to float</td>
 <td><code>float</code></td>
 </tr>
+<tr>
+<td><code>.tosint()</code></td>
+<td>Convert to arbitrary precision sint</td>
+<td><code>sint</code></td>
+</tr>
 </tbody>
 </table>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>var int n = 42
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>console.println(n.tostring())     // &quot;42&quot;
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>var float f = n.tofloat()         // 42.0
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>var sint big = n.tosint()         // 42 as sint
 </code></pre></div>
 <h2 id="float-methods">float methods</h2>
 <table>
@@ -1765,7 +1793,8 @@
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>var string num = &quot;123&quot;
 <a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>var int parsed = num.toint()             // 123
 </code></pre></div>
-<p><code>.toint()</code> and <code>.tofloat()</code> produce a runtime error if the string is not a valid number.</p>
+<p>| <code>.tosint()</code>     | Parse as arbitrary precision integer | <code>sint</code> |</p>
+<p><code>.toint()</code>, <code>.tofloat()</code>, and <code>.tosint()</code> produce a runtime error if the string is not a valid number.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>var string s = &quot;hello world&quot;
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>console.println(s.split(&quot; &quot;).tostring())        // [&quot;hello&quot;, &quot;world&quot;]
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>console.println(s.upper())                       // HELLO WORLD
@@ -1780,6 +1809,49 @@
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>console.println(word[0])    // &quot;h&quot;
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>console.println(word[4])    // &quot;o&quot;
 </code></pre></div>
+<h2 id="sint-methods">sint methods</h2>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Description</th>
+<th>Returns</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.tostring()</code></td>
+<td>Convert to string representation</td>
+<td><code>string</code></td>
+</tr>
+<tr>
+<td><code>.toint()</code></td>
+<td>Convert to int (errors if too large for 64-bit)</td>
+<td><code>int</code></td>
+</tr>
+<tr>
+<td><code>.tofloat()</code></td>
+<td>Convert to float (may lose precision)</td>
+<td><code>float</code></td>
+</tr>
+<tr>
+<td><code>.abs()</code></td>
+<td>Absolute value</td>
+<td><code>sint</code></td>
+</tr>
+<tr>
+<td><code>.pow(exp)</code></td>
+<td>Raise to a power</td>
+<td><code>sint</code></td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>var sint big = 99999999999999999999
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>console.println(big.tostring())
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>console.println(big.abs().tostring())
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>console.println(big.pow(2).tostring())
+</code></pre></div>
+<p>See <a href="../sint/">sint</a> for full details on the type.</p>
 <h2 id="bool-methods">bool methods</h2>
 <table>
 <thead>
@@ -1797,8 +1869,8 @@
 </tr>
 </tbody>
 </table>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>var bool flag = true
-<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>console.println(flag.tostring())    // &quot;true&quot;
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>var bool flag = true
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>console.println(flag.tostring())    // &quot;true&quot;
 </code></pre></div>
 <h2 id="list-methods">list methods</h2>
 <table>
@@ -1896,11 +1968,11 @@
 <p>See <a href="../dicts/">Dictionaries</a> for details.</p>
 <h2 id="chaining-methods">Chaining methods</h2>
 <p>Methods can be chained:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>var int n = 42
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>console.println(n.tofloat().tostring())   // &quot;42&quot;
-<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
-<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>var list nums = [1, 2, 3]
-<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>console.println(nums.length().tostring())  // &quot;3&quot;
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>var int n = 42
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>console.println(n.tofloat().tostring())   // &quot;42&quot;
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>var list nums = [1, 2, 3]
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>console.println(nums.length().tostring())  // &quot;3&quot;
 </code></pre></div>
 
 

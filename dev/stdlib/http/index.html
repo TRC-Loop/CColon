@@ -1169,17 +1169,18 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#functions" class="md-nav__link">
+  <a href="#client-functions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Functions
+        Client Functions
       
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
+    <nav class="md-nav" aria-label="Client Functions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#arguments" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1187,6 +1188,50 @@
       
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#server-function" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Server Function
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Server Function">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#request-dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Request dict
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#response-formats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Response formats
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1225,10 +1270,21 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#reading-response-headers" class="md-nav__link">
+  <a href="#simple-http-server" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Reading response headers
+        Simple HTTP server
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#server-with-json-responses" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Server with JSON responses
       
     </span>
   </a>
@@ -1466,17 +1522,18 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#functions" class="md-nav__link">
+  <a href="#client-functions" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Functions
+        Client Functions
       
     </span>
   </a>
   
-</li>
-      
-        <li class="md-nav__item">
+    <nav class="md-nav" aria-label="Client Functions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
   <a href="#arguments" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1484,6 +1541,50 @@
       
     </span>
   </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#server-function" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Server Function
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Server Function">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#request-dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Request dict
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#response-formats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Response formats
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1522,10 +1623,21 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#reading-response-headers" class="md-nav__link">
+  <a href="#simple-http-server" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Reading response headers
+        Simple HTTP server
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#server-with-json-responses" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Server with JSON responses
       
     </span>
   </a>
@@ -1569,10 +1681,10 @@
 
 
 <h1 id="http">http</h1>
-<p>The <code>http</code> module provides functions for making HTTP requests.</p>
+<p>The <code>http</code> module provides functions for making HTTP requests and running HTTP servers.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>import http
 </code></pre></div>
-<h2 id="functions">Functions</h2>
+<h2 id="client-functions">Client Functions</h2>
 <table>
 <thead>
 <tr>
@@ -1606,50 +1718,113 @@
 <a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    &quot;headers&quot;: {&quot;content-type&quot;: &quot;application/json&quot;, ...}
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>}
 </code></pre></div>
-<h2 id="arguments">Arguments</h2>
+<h3 id="arguments">Arguments</h3>
 <ul>
 <li><strong>url</strong> (required): The URL to request</li>
 <li><strong>body</strong> (optional, POST/PUT): Request body as a string</li>
 <li><strong>headers</strong> (optional): Dict of HTTP headers</li>
 </ul>
+<h2 id="server-function">Server Function</h2>
+<table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>http.listen(int port, function handler)</code></td>
+<td>Start an HTTP server</td>
+</tr>
+</tbody>
+</table>
+<p>The handler function receives a request dict and should return a response.</p>
+<h3 id="request-dict">Request dict</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>{
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    &quot;method&quot;: &quot;GET&quot;,
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    &quot;path&quot;: &quot;/hello&quot;,
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    &quot;body&quot;: &quot;&quot;,
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>    &quot;headers&quot;: {&quot;content-type&quot;: &quot;text/plain&quot;, ...},
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    &quot;query&quot;: &quot;name=world&quot;
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>}
+</code></pre></div>
+<h3 id="response-formats">Response formats</h3>
+<p>The handler can return:</p>
+<ul>
+<li>A <strong>string</strong>: sent as <code>200 OK</code> with <code>text/plain</code> content type</li>
+<li>A <strong>dict</strong> with <code>status</code>, <code>body</code>, and optionally <code>headers</code></li>
+<li><strong>nil</strong>: sent as <code>204 No Content</code></li>
+</ul>
 <h2 id="examples">Examples</h2>
 <h3 id="simple-get-request">Simple GET request</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>import console
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>import http
-<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>var dict resp = http.get(&quot;https://httpbin.org/get&quot;)
-<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>console.println(&quot;Status: &quot; + resp[&quot;status&quot;].tostring())
-<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>console.println(resp[&quot;body&quot;])
-</code></pre></div>
-<h3 id="post-with-json">POST with JSON</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>import console
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>import http
-<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>import json
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>var dict data = {&quot;name&quot;: &quot;CColon&quot;, &quot;version&quot;: &quot;0.3.0&quot;}
-<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>var string body = json.encode(data)
-<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>var dict headers = {&quot;Content-Type&quot;: &quot;application/json&quot;}
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>var dict resp = http.post(&quot;https://httpbin.org/post&quot;, body, headers)
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>console.println(&quot;Status: &quot; + resp[&quot;status&quot;].tostring())
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>function main() {
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    var dict resp = http.get(&quot;https://httpbin.org/get&quot;)
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    console.println(&quot;Status: &quot; + resp[&quot;status&quot;].tostring())
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>    console.println(resp[&quot;body&quot;])
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>}
 </code></pre></div>
-<h3 id="reading-response-headers">Reading response headers</h3>
+<h3 id="post-with-json">POST with JSON</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>import console
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>import http
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>var dict resp = http.get(&quot;https://httpbin.org/get&quot;)
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>var dict headers = resp[&quot;headers&quot;]
-<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>console.println(&quot;Content-Type: &quot; + headers[&quot;content-type&quot;])
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>import json
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>function main() {
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    var dict data = {&quot;name&quot;: &quot;CColon&quot;, &quot;version&quot;: &quot;1.0.0&quot;}
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>    var string body = json.encode(data)
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>    var dict headers = {&quot;Content-Type&quot;: &quot;application/json&quot;}
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>    var dict resp = http.post(&quot;https://httpbin.org/post&quot;, body, headers)
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>    console.println(&quot;Status: &quot; + resp[&quot;status&quot;].tostring())
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>}
 </code></pre></div>
-<h3 id="error-handling">Error handling</h3>
+<h3 id="simple-http-server">Simple HTTP server</h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>import console
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>import http
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
-<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>try {
-<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    var dict resp = http.get(&quot;https://nonexistent.example.com&quot;)
-<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>} catch (Error e) {
-<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>    console.println(&quot;Request failed: &quot; + e.message)
-<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>}
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>function handler(dict req) string {
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    console.println(req[&quot;method&quot;] + &quot; &quot; + req[&quot;path&quot;])
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>    return &quot;Hello from CColon!&quot;
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>}
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>
+<a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>function main() {
+<a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>    http.listen(8080, handler)
+<a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>}
+</code></pre></div>
+<h3 id="server-with-json-responses">Server with JSON responses</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>import http
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>import json
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>function handler(dict req) dict {
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    if (req[&quot;path&quot;] == &quot;/api/hello&quot;) {
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>        var dict body = {&quot;message&quot;: &quot;Hello, World!&quot;}
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>        return {
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>            &quot;status&quot;: 200,
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>            &quot;body&quot;: json.encode(body),
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>            &quot;headers&quot;: {&quot;Content-Type&quot;: &quot;application/json&quot;}
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>        }
+<a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>    }
+<a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>    return {&quot;status&quot;: 404, &quot;body&quot;: &quot;Not Found&quot;}
+<a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>}
+<a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>
+<a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a>function main() {
+<a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a>    http.listen(3000, handler)
+<a id="__codelineno-6-18" name="__codelineno-6-18" href="#__codelineno-6-18"></a>}
+</code></pre></div>
+<h3 id="error-handling">Error handling</h3>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>import console
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>import http
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>function main() {
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>    try {
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>        var dict resp = http.get(&quot;https://nonexistent.example.com&quot;)
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>    } catch (Error e) {
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>        console.println(&quot;Request failed: &quot; + e.message)
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>    }
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>}
 </code></pre></div>
 
 

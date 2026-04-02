@@ -1414,10 +1414,43 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#using-installed-packages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using installed packages
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-packages-are-loaded" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How packages are loaded
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#installation-directory" class="md-nav__link">
     <span class="md-ellipsis">
       
         Installation directory
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limitations
       
     </span>
   </a>
@@ -1594,10 +1627,43 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#using-installed-packages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using installed packages
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-packages-are-loaded" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How packages are loaded
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#installation-directory" class="md-nav__link">
     <span class="md-ellipsis">
       
         Installation directory
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#limitations" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Limitations
       
     </span>
   </a>
@@ -1740,8 +1806,35 @@
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>ccolon<span class="w"> </span>pkg<span class="w"> </span>install<span class="w"> </span>https://github.com/you/your-package@1.0.0
 </code></pre></div>
 <p>Without a version, the latest code from the <code>main</code> branch is used.</p>
+<h2 id="using-installed-packages">Using installed packages</h2>
+<p>Once a package is installed, its functions and globals are available in your CColon programs. CCL packages are loaded by running their entry file, which registers functions and variables into the VM. Go native packages register modules that you can call directly.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>import console
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>function main() {
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>    // If a package registered a function called &quot;greet&quot;
+<a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>    greet(&quot;world&quot;)
+<a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a>}
+</code></pre></div>
+<p>Packages are loaded automatically when you run any <code>.ccl</code> file. The package loader scans <code>~/.ccolon/packages/</code> at startup and loads every installed package.</p>
+<h2 id="how-packages-are-loaded">How packages are loaded</h2>
+<ol>
+<li>The CColon runtime scans <code>~/.ccolon/packages/</code> for directories</li>
+<li>For each directory, it reads the <code>ccolon.json</code> manifest</li>
+<li>Based on the <code>type</code> field:<ul>
+<li><strong>CCL packages</strong>: the entry file (default <code>lib.ccl</code>) is compiled and executed, registering its functions into the runtime</li>
+<li><strong>Go packages</strong>: the compiled Go plugin is loaded via Go's plugin system (Linux and macOS only)</li>
+</ul>
+</li>
+<li>All registered functions and modules become available to your program</li>
+</ol>
 <h2 id="installation-directory">Installation directory</h2>
 <p>Packages are installed to <code>~/.ccolon/packages/&lt;name&gt;@&lt;version&gt;/</code>.</p>
+<h2 id="limitations">Limitations</h2>
+<ul>
+<li>Go native packages only work on Linux and macOS. Windows does not support Go plugins.</li>
+<li>Packages do not have isolated namespaces yet. If two packages define a function with the same name, the second one loaded wins.</li>
+<li>There is no automatic dependency resolution. If a package depends on another package, you need to install it manually.</li>
+</ul>
 
 
 
