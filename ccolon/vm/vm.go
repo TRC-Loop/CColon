@@ -101,6 +101,9 @@ func (vm *VM) frame() *CallFrame {
 
 func (vm *VM) readByte() byte {
 	f := vm.frame()
+	if f.ip >= len(f.function.Code) {
+		return byte(compiler.OP_HALT)
+	}
 	b := f.function.Code[f.ip]
 	f.ip++
 	return b
@@ -178,6 +181,9 @@ func (vm *VM) CallFunc(fn Value, args []Value) (Value, error) {
 	vm.sp = basePtr - 1 + totalArgs
 	newBase := basePtr - 1
 
+	savedFP := vm.fp
+	savedFrames := len(vm.frames)
+
 	vm.frames = append(vm.frames, CallFrame{
 		function: obj,
 		ip:       0,
@@ -187,8 +193,14 @@ func (vm *VM) CallFunc(fn Value, args []Value) (Value, error) {
 
 	// Run until the frame returns
 	if err := vm.execute(); err != nil {
+		vm.frames = vm.frames[:savedFrames]
+		vm.fp = savedFP
 		return nil, err
 	}
+
+	// Restore frame state so we don't fall into the caller's bytecode
+	vm.frames = vm.frames[:savedFrames]
+	vm.fp = savedFP
 
 	// The return value is on top of the stack
 	if vm.sp > 0 {
