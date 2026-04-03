@@ -460,6 +460,10 @@ func (p *Parser) parsePrefix() (Expr, error) {
 		p.advance()
 		return &StringLiteral{Value: tok.Literal, P: Position{tok.Line, tok.Col}}, nil
 
+	case lexer.TOKEN_FSTRING_LIT:
+		p.advance()
+		return p.parseFString(tok)
+
 	case lexer.TOKEN_TRUE:
 		p.advance()
 		return &BoolLiteral{Value: true, P: Position{tok.Line, tok.Col}}, nil
@@ -1032,4 +1036,73 @@ func (p *Parser) parseWithStmt() (*WithStmt, error) {
 		Body:    body,
 		P:       Position{tok.Line, tok.Col},
 	}, nil
+}
+
+func (p *Parser) parseFString(tok lexer.Token) (Expr, error) {
+	raw := []rune(tok.Literal)
+	pos := Position{tok.Line, tok.Col}
+	var parts []Expr
+	var buf []rune
+
+	i := 0
+	for i < len(raw) {
+		if raw[i] == '{' {
+			// flush text before this
+			if len(buf) > 0 {
+				parts = append(parts, &StringLiteral{Value: string(buf), P: pos})
+				buf = nil
+			}
+			// find matching closing brace
+			i++
+			depth := 1
+			var exprRunes []rune
+			for i < len(raw) && depth > 0 {
+				if raw[i] == '{' {
+					depth++
+				} else if raw[i] == '}' {
+					depth--
+					if depth == 0 {
+						break
+					}
+				}
+				exprRunes = append(exprRunes, raw[i])
+				i++
+			}
+			if depth != 0 {
+				return nil, fmt.Errorf("line %d:%d: unclosed '{' in f-string", tok.Line, tok.Col)
+			}
+			i++ // skip closing }
+
+			// sub-parse the expression
+			subLexer := lexer.New(string(exprRunes))
+			subTokens, err := subLexer.Tokenize()
+			if err != nil {
+				return nil, fmt.Errorf("line %d:%d: f-string expression: %s", tok.Line, tok.Col, err)
+			}
+			subParser := New(subTokens)
+			expr, err := subParser.parseExpression(0)
+			if err != nil {
+				return nil, fmt.Errorf("line %d:%d: f-string expression: %s", tok.Line, tok.Col, err)
+			}
+			parts = append(parts, expr)
+		} else {
+			buf = append(buf, raw[i])
+			i++
+		}
+	}
+	// flush remaining text
+	if len(buf) > 0 {
+		parts = append(parts, &StringLiteral{Value: string(buf), P: pos})
+	}
+
+	if len(parts) == 0 {
+		return &StringLiteral{Value: "", P: pos}, nil
+	}
+	if len(parts) == 1 {
+		if sl, ok := parts[0].(*StringLiteral); ok {
+			return sl, nil
+		}
+	}
+
+	return &FStringExpr{Parts: parts, P: pos}, nil
 }

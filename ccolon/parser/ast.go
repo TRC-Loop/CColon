@@ -127,6 +127,11 @@ type DictLiteral struct {
 	P      Position
 }
 
+type FStringExpr struct {
+	Parts []Expr // alternating StringLiteral and expression nodes
+	P     Position
+}
+
 func (n *IntLiteral) Pos() Position        { return n.P }
 func (n *SintLiteral) Pos() Position       { return n.P }
 func (n *FloatLiteral) Pos() Position      { return n.P }
@@ -145,6 +150,7 @@ func (n *SelfExpr) Pos() Position           { return n.P }
 func (n *FieldAccessExpr) Pos() Position    { return n.P }
 func (n *SuperCallExpr) Pos() Position      { return n.P }
 func (n *DictLiteral) Pos() Position        { return n.P }
+func (n *FStringExpr) Pos() Position        { return n.P }
 
 func (n *IntLiteral) exprNode()        {}
 func (n *SintLiteral) exprNode()       {}
@@ -164,6 +170,7 @@ func (n *SelfExpr) exprNode()           {}
 func (n *FieldAccessExpr) exprNode()    {}
 func (n *SuperCallExpr) exprNode()      {}
 func (n *DictLiteral) exprNode()        {}
+func (n *FStringExpr) exprNode()        {}
 
 // --- Statements ---
 

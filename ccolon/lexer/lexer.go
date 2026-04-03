@@ -140,17 +140,59 @@ func (l *Lexer) readNumber() Token {
 	return Token{TOKEN_INT_LIT, lit, line, col}
 }
 
-func (l *Lexer) readIdentifier() Token {
+func (l *Lexer) readIdentifier() (Token, error) {
 	line, col := l.line, l.col
 	start := l.pos
 	for l.pos < len(l.source) && (unicode.IsLetter(l.peek()) || unicode.IsDigit(l.peek()) || l.peek() == '_') {
 		l.advance()
 	}
 	lit := string(l.source[start:l.pos])
-	if tok, ok := LookupKeyword(lit); ok {
-		return Token{tok, lit, line, col}
+
+	// f-string: f"..."
+	if lit == "f" && l.pos < len(l.source) && l.peek() == '"' {
+		return l.readFString(line, col)
 	}
-	return Token{TOKEN_IDENT, lit, line, col}
+
+	if tok, ok := LookupKeyword(lit); ok {
+		return Token{tok, lit, line, col}, nil
+	}
+	return Token{TOKEN_IDENT, lit, line, col}, nil
+}
+
+func (l *Lexer) readFString(line, col int) (Token, error) {
+	l.advance() // opening "
+	var result []rune
+	for l.pos < len(l.source) {
+		ch := l.advance()
+		if ch == '"' {
+			return Token{TOKEN_FSTRING_LIT, string(result), line, col}, nil
+		}
+		if ch == '\\' {
+			if l.pos >= len(l.source) {
+				return Token{}, fmt.Errorf("line %d:%d: unterminated f-string escape", line, col)
+			}
+			esc := l.advance()
+			switch esc {
+			case 'n':
+				result = append(result, '\n')
+			case 't':
+				result = append(result, '\t')
+			case '"':
+				result = append(result, '"')
+			case '\\':
+				result = append(result, '\\')
+			case '{':
+				result = append(result, '{')
+			case '}':
+				result = append(result, '}')
+			default:
+				result = append(result, '\\', esc)
+			}
+		} else {
+			result = append(result, ch)
+		}
+	}
+	return Token{}, fmt.Errorf("line %d:%d: unterminated f-string", line, col)
 }
 
 func (l *Lexer) NextToken() (Token, error) {
@@ -169,7 +211,7 @@ func (l *Lexer) NextToken() (Token, error) {
 		return l.readNumber(), nil
 	}
 	if unicode.IsLetter(ch) || ch == '_' {
-		return l.readIdentifier(), nil
+		return l.readIdentifier()
 	}
 
 	l.advance()

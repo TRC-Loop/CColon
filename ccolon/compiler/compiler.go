@@ -551,6 +551,10 @@ func (c *Compiler) compileExpr(expr parser.Expr) error {
 		c.emitConstant(e.Value, e.P.Line)
 	case *parser.StringLiteral:
 		c.emitConstant(e.Value, e.P.Line)
+	case *parser.FStringExpr:
+		if err := c.compileFString(e); err != nil {
+			return err
+		}
 	case *parser.BoolLiteral:
 		if e.Value {
 			c.emitOp(OP_TRUE, e.P.Line)
@@ -1036,5 +1040,17 @@ func (c *Compiler) compileWith(s *parser.WithStmt) error {
 
 	c.patchJump(endJump)
 	c.endScope(s.P.Line) // end resource scope
+	return nil
+}
+
+func (c *Compiler) compileFString(e *parser.FStringExpr) error {
+	// Start with an empty string to ensure the result is always a string
+	c.emitConstant("", e.P.Line)
+	for _, part := range e.Parts {
+		if err := c.compileExpr(part); err != nil {
+			return err
+		}
+		c.emitOp(OP_ADD, e.P.Line)
+	}
 	return nil
 }

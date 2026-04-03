@@ -9,6 +9,7 @@ const (
 	TOKEN_INT_LIT
 	TOKEN_FLOAT_LIT
 	TOKEN_STRING_LIT
+	TOKEN_FSTRING_LIT
 
 	// Identifiers
 	TOKEN_IDENT
@@ -137,7 +138,7 @@ type Token struct {
 
 var tokenNames = map[TokenType]string{
 	TOKEN_EOF: "EOF", TOKEN_INT_LIT: "INT", TOKEN_FLOAT_LIT: "FLOAT",
-	TOKEN_STRING_LIT: "STRING", TOKEN_IDENT: "IDENT",
+	TOKEN_STRING_LIT: "STRING", TOKEN_FSTRING_LIT: "FSTRING", TOKEN_IDENT: "IDENT",
 	TOKEN_VAR: "var", TOKEN_FUNCTION: "function", TOKEN_RETURN: "return",
 	TOKEN_IF: "if", TOKEN_ELSE: "else", TOKEN_FOR: "for", TOKEN_IN: "in",
 	TOKEN_WHILE: "while", TOKEN_IMPORT: "import", TOKEN_AND: "and",
