@@ -18,6 +18,7 @@ type Manifest struct {
 	Registry     string            `json:"registry,omitempty"`
 	Type         string            `json:"type,omitempty"`  // "ccl" (default) or "go"
 	Entry        string            `json:"entry,omitempty"` // entry point file
+	Repository   string            `json:"repository,omitempty"`
 }
 
 // RegistryURL returns the effective registry URL, checking the manifest field

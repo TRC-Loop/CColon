@@ -139,6 +139,8 @@ func (c *Compiler) compileStmt(stmt parser.Stmt) error {
 	switch s := stmt.(type) {
 	case *parser.ImportStmt:
 		return c.compileImport(s)
+	case *parser.FromImportStmt:
+		return c.compileFromImport(s)
 	case *parser.VarDecl:
 		return c.compileVarDecl(s)
 	case *parser.FuncDecl:
@@ -184,6 +186,15 @@ func (c *Compiler) compileImport(s *parser.ImportStmt) error {
 		c.emitOp(OP_IMPORT, s.P.Line)
 	}
 	c.emitUint16(idx, s.P.Line)
+	return nil
+}
+
+func (c *Compiler) compileFromImport(s *parser.FromImportStmt) error {
+	moduleIdx := c.addConstant(s.Module)
+	namesIdx := c.addConstant(s.Names)
+	c.emitOp(OP_FROM_IMPORT, s.P.Line)
+	c.emitUint16(moduleIdx, s.P.Line)
+	c.emitUint16(namesIdx, s.P.Line)
 	return nil
 }
 

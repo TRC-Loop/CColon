@@ -184,14 +184,26 @@ func runPkg(args []string) {
 		os.Exit(1)
 	}
 
+	// check for --local flag
+	local := false
+	var filteredArgs []string
+	for _, a := range args {
+		if a == "--local" {
+			local = true
+		} else {
+			filteredArgs = append(filteredArgs, a)
+		}
+	}
+	args = filteredArgs
+
 	switch args[0] {
 	case "install":
 		if len(args) < 2 {
-			fmt.Fprintln(os.Stderr, "usage: ccolon pkg install <github-url[@version]>")
+			fmt.Fprintln(os.Stderr, "usage: ccolon pkg install [--local] <github-url[@version]>")
 			os.Exit(1)
 		}
 		repoURL, version := pkg.ParseInstallArg(args[1])
-		if err := pkg.Install(repoURL, version); err != nil {
+		if err := pkg.Install(repoURL, version, local); err != nil {
 			fatal(err)
 		}
 	case "remove":
@@ -212,7 +224,11 @@ func runPkg(args []string) {
 			return
 		}
 		for _, p := range packages {
-			fmt.Printf("  %s@%s  (%s)\n", p.Name, p.Version, p.Path)
+			if p.Repository != "" {
+				fmt.Printf("  %s@%s  %s\n", p.Name, p.Version, p.Repository)
+			} else {
+				fmt.Printf("  %s@%s  (%s)\n", p.Name, p.Version, p.Path)
+			}
 		}
 	case "init":
 		if err := pkg.Init(); err != nil {

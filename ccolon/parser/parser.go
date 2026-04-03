@@ -82,6 +82,8 @@ func (p *Parser) parseStatement() (Stmt, error) {
 	switch p.current().Type {
 	case lexer.TOKEN_IMPORT:
 		return p.parseImport()
+	case lexer.TOKEN_FROM:
+		return p.parseFromImport()
 	case lexer.TOKEN_VAR:
 		return p.parseVarDecl(false)
 	case lexer.TOKEN_CONST:
@@ -152,6 +154,44 @@ func (p *Parser) parseImport() (*ImportStmt, error) {
 		return nil, err
 	}
 	return &ImportStmt{Module: name.Literal, P: Position{tok.Line, tok.Col}}, nil
+}
+
+func (p *Parser) parseFromImport() (*FromImportStmt, error) {
+	tok := p.advance() // consume 'from'
+
+	name, err := p.expect(lexer.TOKEN_IDENT)
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := p.expect(lexer.TOKEN_IMPORT); err != nil {
+		return nil, err
+	}
+
+	var names []string
+	if p.current().Type == lexer.TOKEN_STAR {
+		p.advance()
+		names = []string{"*"}
+	} else {
+		for {
+			n, err := p.expect(lexer.TOKEN_IDENT)
+			if err != nil {
+				return nil, err
+			}
+			names = append(names, n.Literal)
+			if p.current().Type == lexer.TOKEN_COMMA {
+				p.advance()
+			} else {
+				break
+			}
+		}
+	}
+
+	return &FromImportStmt{
+		Module: name.Literal,
+		Names:  names,
+		P:      Position{tok.Line, tok.Col},
+	}, nil
 }
 
 func (p *Parser) parseVarDecl(isConst bool) (*VarDecl, error) {

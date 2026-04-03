@@ -25,6 +25,7 @@ const (
 	TOKEN_IN
 	TOKEN_WHILE
 	TOKEN_IMPORT
+	TOKEN_FROM
 	TOKEN_AND
 	TOKEN_OR
 	TOKEN_NOT
@@ -96,6 +97,7 @@ var keywords = map[string]TokenType{
 	"in":       TOKEN_IN,
 	"while":    TOKEN_WHILE,
 	"import":   TOKEN_IMPORT,
+	"from":     TOKEN_FROM,
 	"and":      TOKEN_AND,
 	"or":       TOKEN_OR,
 	"not":      TOKEN_NOT,
@@ -143,7 +145,7 @@ var tokenNames = map[TokenType]string{
 	TOKEN_STRING_LIT: "STRING", TOKEN_FSTRING_LIT: "FSTRING", TOKEN_IDENT: "IDENT",
 	TOKEN_VAR: "var", TOKEN_CONST: "const", TOKEN_FUNCTION: "function", TOKEN_RETURN: "return",
 	TOKEN_IF: "if", TOKEN_ELSE: "else", TOKEN_FOR: "for", TOKEN_IN: "in",
-	TOKEN_WHILE: "while", TOKEN_IMPORT: "import", TOKEN_AND: "and",
+	TOKEN_WHILE: "while", TOKEN_IMPORT: "import", TOKEN_FROM: "from", TOKEN_AND: "and",
 	TOKEN_OR: "or", TOKEN_NOT: "not", TOKEN_TRUE: "true", TOKEN_FALSE: "false",
 	TOKEN_BREAK: "break", TOKEN_CONTINUE: "continue",
 	TOKEN_CLASS: "class", TOKEN_EXTENDS: "extends", TOKEN_SELF: "self",

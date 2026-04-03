@@ -63,8 +63,20 @@ func FetchManifest(repoURL, version string) (*Manifest, error) {
 	return &m, nil
 }
 
+func localPackagesDir() (string, error) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+	dir := filepath.Join(cwd, "ccolon_packages")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return "", err
+	}
+	return dir, nil
+}
+
 // Install downloads a package from a GitHub repo and installs it locally.
-func Install(repoURL, version string) error {
+func Install(repoURL, version string, local bool) error {
 	manifest, err := FetchManifest(repoURL, version)
 	if err != nil {
 		return err
@@ -81,7 +93,12 @@ func Install(repoURL, version string) error {
 		ver = "latest"
 	}
 
-	pkgDir, err := packagesDir()
+	var pkgDir string
+	if local {
+		pkgDir, err = localPackagesDir()
+	} else {
+		pkgDir, err = packagesDir()
+	}
 	if err != nil {
 		return err
 	}
@@ -139,6 +156,10 @@ func Install(repoURL, version string) error {
 		os.Remove(subDir)
 	}
 
+	// Save repo URL into the manifest for reference
+	manifest.Repository = repoURL
+	_ = SaveManifest(installDir, manifest)
+
 	return nil
 }
 
@@ -173,9 +194,10 @@ func Remove(name string) error {
 
 // InstalledPackage holds info about a locally installed package.
 type InstalledPackage struct {
-	Name    string
-	Version string
-	Path    string
+	Name       string
+	Version    string
+	Path       string
+	Repository string
 }
 
 // List returns all installed packages.
@@ -202,10 +224,16 @@ func List() ([]InstalledPackage, error) {
 		if len(parts) == 2 {
 			ver = parts[1]
 		}
+		repo := ""
+		pkgPath := filepath.Join(pkgDir, e.Name())
+		if m, err := LoadManifest(pkgPath); err == nil {
+			repo = m.Repository
+		}
 		packages = append(packages, InstalledPackage{
-			Name:    name,
-			Version: ver,
-			Path:    filepath.Join(pkgDir, e.Name()),
+			Name:       name,
+			Version:    ver,
+			Path:       pkgPath,
+			Repository: repo,
 		})
 	}
 	return packages, nil

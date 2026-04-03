@@ -80,6 +80,18 @@ func (vm *VM) GetModule(name string) *ModuleValue {
 	return vm.modules[name]
 }
 
+func (vm *VM) GlobalNames() []string {
+	names := make([]string, 0, len(vm.globals))
+	for name := range vm.globals {
+		names = append(names, name)
+	}
+	return names
+}
+
+func (vm *VM) GetGlobal(name string) Value {
+	return vm.globals[name]
+}
+
 func (vm *VM) push(v Value) {
 	if vm.sp >= len(vm.stack) {
 		vm.stack = append(vm.stack, make([]Value, 256)...)
@@ -604,6 +616,42 @@ func (vm *VM) execute() error {
 				return vm.runtimeError("unknown module '%s'", moduleName)
 			}
 			vm.imported[moduleName] = true
+
+		case compiler.OP_FROM_IMPORT:
+			moduleIdx := vm.readUint16()
+			namesIdx := vm.readUint16()
+			moduleName := vm.getConstant(moduleIdx).(string)
+			names := vm.getConstant(namesIdx).([]string)
+			mod, ok := vm.modules[moduleName]
+			if !ok {
+				return vm.runtimeError("unknown module '%s'", moduleName)
+			}
+			vm.imported[moduleName] = true
+			if len(names) == 1 && names[0] == "*" {
+				// import all methods as globals
+				for name, fn := range mod.Methods {
+					vm.globals[name] = fn
+				}
+				if mod.Properties != nil {
+					for name, val := range mod.Properties {
+						vm.globals[name] = val
+					}
+				}
+			} else {
+				for _, name := range names {
+					if fn, ok := mod.Methods[name]; ok {
+						vm.globals[name] = fn
+					} else if mod.Properties != nil {
+						if val, ok := mod.Properties[name]; ok {
+							vm.globals[name] = val
+						} else {
+							return vm.runtimeError("module '%s' has no member '%s'", moduleName, name)
+						}
+					} else {
+						return vm.runtimeError("module '%s' has no member '%s'", moduleName, name)
+					}
+				}
+			}
 
 		case compiler.OP_IMPORT_FILE:
 			idx := vm.readUint16()

@@ -66,6 +66,7 @@ const (
 
 	OP_MARK_CONST
 	OP_CALL_KW
+	OP_FROM_IMPORT
 )
 
 type FuncObject struct {
@@ -119,7 +120,8 @@ var opNames = map[OpCode]string{
 	OP_TRY_BEGIN: "TRY_BEGIN", OP_TRY_END: "TRY_END", OP_THROW: "THROW",
 	OP_IMPORT_FILE: "IMPORT_FILE",
 	OP_MARK_CONST:  "MARK_CONST",
-	OP_CALL_KW:     "CALL_KW",
+	OP_CALL_KW:      "CALL_KW",
+	OP_FROM_IMPORT:  "FROM_IMPORT",
 }
 
 func (op OpCode) String() string {

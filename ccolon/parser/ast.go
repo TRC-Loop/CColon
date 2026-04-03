@@ -269,6 +269,12 @@ type ImportStmt struct {
 	P      Position
 }
 
+type FromImportStmt struct {
+	Module string
+	Names  []string // specific names to import, or ["*"] for wildcard
+	P      Position
+}
+
 type ClassDecl struct {
 	Name      string
 	SuperName string
@@ -311,7 +317,8 @@ func (n *ForInStmt) Pos() Position    { return n.P }
 func (n *BreakStmt) Pos() Position    { return n.P }
 func (n *ContinueStmt) Pos() Position { return n.P }
 func (n *FuncDecl) Pos() Position     { return n.P }
-func (n *ImportStmt) Pos() Position    { return n.P }
+func (n *ImportStmt) Pos() Position     { return n.P }
+func (n *FromImportStmt) Pos() Position { return n.P }
 func (n *ClassDecl) Pos() Position     { return n.P }
 func (n *TryCatchStmt) Pos() Position  { return n.P }
 func (n *ThrowStmt) Pos() Position     { return n.P }
@@ -327,7 +334,8 @@ func (n *ForInStmt) stmtNode()    {}
 func (n *BreakStmt) stmtNode()    {}
 func (n *ContinueStmt) stmtNode() {}
 func (n *FuncDecl) stmtNode()     {}
-func (n *ImportStmt) stmtNode()    {}
+func (n *ImportStmt) stmtNode()     {}
+func (n *FromImportStmt) stmtNode() {}
 func (n *ClassDecl) stmtNode()     {}
 func (n *TryCatchStmt) stmtNode()  {}
 func (n *ThrowStmt) stmtNode()     {}
