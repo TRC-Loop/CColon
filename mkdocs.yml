@@ -44,6 +44,7 @@ nav:
     - Safe Integers (sint): reference/sint.md
     - Methods on Values: reference/methods.md
     - Error Handling: reference/error-handling.md
+    - F-Strings: reference/fstrings.md
     - Imports and Modules: reference/imports.md
     - Comments: reference/comments.md
     - Grammar (EBNF): reference/grammar.md

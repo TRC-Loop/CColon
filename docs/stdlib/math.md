@@ -8,16 +8,23 @@ import math
 
 ## Constants
 
-These are called as zero-argument functions:
+These are properties, accessed without parentheses:
 
-| Function     | Value                |
+| Property    | Value                |
 |-------------|----------------------|
-| `math.pi()` | 3.141592653589793   |
-| `math.e()`  | 2.718281828459045   |
-| `math.inf()`| Positive infinity    |
+| `math.pi`   | 3.141592653589793   |
+| `math.e`    | 2.718281828459045   |
+| `math.inf`  | Positive infinity    |
 
 ```
-var float circumference = 2.0 * math.pi() * radius
+var float circumference = 2.0 * math.pi * radius
+```
+
+You can also import them directly:
+
+```
+from math import pi, e
+console.println(pi)  // 3.141592653589793
 ```
 
 ## Functions

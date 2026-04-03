@@ -2,24 +2,53 @@
 
 CColon includes a package manager for installing third-party libraries from GitHub repositories.
 
-## Usage
+## Quick start
 
 ```bash
-# Initialize a new project
+// Install a package
+ccolon pkg install https://github.com/TRC-Loop/ccl-testpkg
+
+// Use it in your code
+```
+
+```
+import ccl_testpkg
+
+function main() {
+    ccl_testpkg.test()  // prints "If you see this, it works!"
+}
+```
+
+## Commands
+
+```bash
+// Initialize a new project
 ccolon pkg init
 
-# Install a package from a GitHub repo (latest from main branch)
-ccolon pkg install https://github.com/someone/their-package
+// Install a package (latest from main branch)
+ccolon pkg install https://github.com/TRC-Loop/ccl-testpkg
 
-# Install a specific version (git tag)
-ccolon pkg install https://github.com/someone/their-package@1.2.0
+// Install a specific version (git tag)
+ccolon pkg install https://github.com/TRC-Loop/ccl-testpkg@0.1.0
 
-# Remove a package
-ccolon pkg remove mypackage
+// Install into the current project only
+ccolon pkg install --local https://github.com/TRC-Loop/ccl-testpkg
 
-# List installed packages
+// Upgrade a package to latest
+ccolon pkg upgrade ccl-testpkg
+
+// Remove a package
+ccolon pkg remove ccl-testpkg
+
+// List installed packages (shows name, version, and source repo)
 ccolon pkg list
 ```
+
+### Flags
+
+| Flag | Applies to | Description |
+|------|-----------|-------------|
+| `--local` | install, upgrade | Install into `./ccolon_packages/` instead of global `~/.ccolon/packages/` |
 
 ## How it works
 
@@ -27,9 +56,50 @@ Each CColon package is a GitHub repository. When you run `ccolon pkg install`, t
 
 1. Fetches the `ccolon.json` from the repo to get the package name and metadata
 2. Downloads the repository as a tarball (from the specified tag or main branch)
-3. Extracts it to `~/.ccolon/packages/<name>@<version>/`
+3. Extracts it to `~/.ccolon/packages/<name>@<version>/` (or `./ccolon_packages/` with `--local`)
+4. Registers the package as an importable module
 
-Versions correspond to git tags on the repository.
+## Using packages
+
+Installed packages are available as modules. Import them like built-in modules:
+
+```
+import ccl_testpkg
+
+function main() {
+    ccl_testpkg.test()
+}
+```
+
+You can also use selective imports:
+
+```
+from ccl_testpkg import test
+
+function main() {
+    test()
+}
+```
+
+## Example package
+
+[ccl-testpkg](https://github.com/TRC-Loop/ccl-testpkg) is a test package you can use to verify your setup:
+
+```bash
+ccolon pkg install https://github.com/TRC-Loop/ccl-testpkg
+```
+
+Its `ccolon.json`:
+
+```json
+{
+  "name": "ccl-testpkg",
+  "version": "0.1.0",
+  "description": "Pakage to test CColon's builtin pm",
+  "dependencies": {},
+  "type": "ccl"
+}
+```
 
 ## Project manifest (ccolon.json)
 
@@ -39,9 +109,7 @@ Run `ccolon pkg init` to create a `ccolon.json` in your project directory:
 {
   "name": "my-project",
   "version": "0.1.0",
-  "description": "A short description of your project",
-  "dependencies": {},
-  "type": "ccl"
+  "dependencies": {}
 }
 ```
 
@@ -55,6 +123,7 @@ Run `ccolon pkg init` to create a `ccolon.json` in your project directory:
 | `dependencies` | Map of dependency name to GitHub URL with version |
 | `type` | Package type: `"ccl"` for CColon source, `"go"` for Go native plugins |
 | `entry` | Entry point file (default: `lib.ccl` for ccl packages) |
+| `repository` | Source GitHub URL (set automatically during install) |
 
 ## Creating a package
 
@@ -64,10 +133,10 @@ A CColon package is a GitHub repo with this structure:
 
 ```
 your-package/
-  ccolon.json        # required: package manifest
-  lib.ccl            # entry point (or whatever "entry" specifies)
-  utils.ccl          # additional source files
-  README.md          # optional: documentation
+  ccolon.json        // required: package manifest
+  lib.ccl            // entry point (or whatever "entry" specifies)
+  utils.ccl          // additional source files
+  README.md          // optional: documentation
 ```
 
 The `ccolon.json` should look like:
@@ -84,28 +153,7 @@ The `ccolon.json` should look like:
 
 ### Go native packages (type: "go")
 
-For performance-critical code or system-level functionality, packages can be written in Go. These work similar to how Python allows C extensions.
-
-A Go native package is a GitHub repo with:
-
-```
-your-go-package/
-  ccolon.json        # required: type must be "go"
-  plugin.go          # Go source that registers native functions
-  README.md          # optional
-```
-
-The `ccolon.json`:
-
-```json
-{
-  "name": "your-go-package",
-  "version": "1.0.0",
-  "description": "A native Go package for CColon",
-  "type": "go",
-  "entry": "plugin.go"
-}
-```
+For performance-critical code or system-level functionality, packages can be written in Go.
 
 Go packages must implement a `Register` function that takes a `*vm.VM` and registers modules/functions. See the CColon stdlib source code for examples of how to create native modules.
 
@@ -126,36 +174,9 @@ ccolon pkg install https://github.com/you/your-package@1.0.0
 
 Without a version, the latest code from the `main` branch is used.
 
-## Using installed packages
+## Installation directories
 
-Once a package is installed, its functions and globals are available in your CColon programs. CCL packages are loaded by running their entry file, which registers functions and variables into the VM. Go native packages register modules that you can call directly.
+- **Global**: `~/.ccolon/packages/<name>@<version>/` (default)
+- **Local**: `./ccolon_packages/<name>@<version>/` (with `--local`)
 
-```
-import console
-
-function main() {
-    // If a package registered a function called "greet"
-    greet("world")
-}
-```
-
-Packages are loaded automatically when you run any `.ccl` file. The package loader scans `~/.ccolon/packages/` at startup and loads every installed package.
-
-## How packages are loaded
-
-1. The CColon runtime scans `~/.ccolon/packages/` for directories
-2. For each directory, it reads the `ccolon.json` manifest
-3. Based on the `type` field:
-    - **CCL packages**: the entry file (default `lib.ccl`) is compiled and executed, registering its functions into the runtime
-    - **Go packages**: the compiled Go plugin is loaded via Go's plugin system (Linux and macOS only)
-4. All registered functions and modules become available to your program
-
-## Installation directory
-
-Packages are installed to `~/.ccolon/packages/<name>@<version>/`.
-
-## Limitations
-
-- Go native packages only work on Linux and macOS. Windows does not support Go plugins.
-- Packages do not have isolated namespaces yet. If two packages define a function with the same name, the second one loaded wins.
-- There is no automatic dependency resolution. If a package depends on another package, you need to install it manually.
+Both directories are scanned when loading packages. Local packages take effect only for programs run from that project directory.

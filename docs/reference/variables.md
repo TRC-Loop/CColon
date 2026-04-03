@@ -131,6 +131,25 @@ console.println(person["name"])
 
 See [Dictionaries](dicts.md) for more.
 
+## Constants
+
+Use the `const` keyword to declare variables that cannot be reassigned:
+
+```
+const float pi = 3.14159
+const string name = "CColon"
+const int max = 100
+```
+
+Attempting to reassign a constant produces an error:
+
+```
+const int x = 5
+x = 10  // error: cannot reassign constant 'x'
+```
+
+Constants work in both global and local scope. Local constants are checked at compile time, global constants at runtime.
+
 ## Type conversions
 
 Values can be converted between types using built-in methods:

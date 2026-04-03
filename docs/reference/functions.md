@@ -73,6 +73,24 @@ repeat("ha", 3)    // "hahaha"
 repeat("yo")       // "yo" (times defaults to 1)
 ```
 
+## Keyword arguments
+
+You can pass arguments by name using `name=value` syntax:
+
+```
+function greet(string name, string greeting) {
+    console.println(f"{greeting}, {name}!")
+}
+
+function main() {
+    greet("World", "Hello")             // positional
+    greet(greeting="Hi", name="CColon") // keyword
+    greet("Bob", greeting="Hey")        // mixed
+}
+```
+
+Positional arguments must come before keyword arguments. You cannot provide the same argument both positionally and by name.
+
 ## The main function
 
 When running a `.ccl` file, CColon looks for a function named `main` and calls it automatically. This is the entry point for every program:

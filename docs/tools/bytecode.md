@@ -5,16 +5,27 @@ CColon can compile source files to bytecode (`.cclb`) for faster loading and dis
 ## Usage
 
 ```bash
-# Compile a source file to bytecode
+// Compile a source file to bytecode
 ccolon compile file.ccl
-# Produces file.cclb
+// Produces file.cclb
 
-# Compile with platform tag
+// Custom output file name
+ccolon compile -o output.cclb file.ccl
+
+// Compile with platform tag
 ccolon compile --platform file.ccl
 
-# Run a compiled file
+// Run a compiled file
 ccolon file.cclb
 ```
+
+### Flags
+
+| Flag | Description |
+|------|-------------|
+| `-o`, `--output` | Set the output file path |
+| `--platform` | Embed OS/architecture info |
+| `--bundle` | Bundle imported libraries (reserved) |
 
 ## How it works
 

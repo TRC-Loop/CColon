@@ -4,7 +4,7 @@ Run `ccolon` with no arguments to start the interactive shell:
 
 ```
 $ ccolon
-CColon v0.1.0 - Interactive Mode
+CColon v1.2.0 - Interactive Mode
 Type 'exit' to quit.
 
 c: >
@@ -42,6 +42,14 @@ The `...` prompt indicates that the REPL is waiting for more input.
 
 Variables, functions, and imports persist across lines within the same session. Define a function once and call it as many times as you want.
 
+## Tab completion
+
+The REPL supports tab completion for keywords, module names, and common identifiers.
+
+## History
+
+Command history is saved to `~/.ccolon_history` and persists between sessions. Use the up/down arrow keys to navigate previous entries.
+
 ## Exiting
 
-Type `exit` or press `Ctrl+D` to quit.
+Type `exit` or press `Ctrl+D` to quit. Press `Ctrl+C` to cancel the current input.
