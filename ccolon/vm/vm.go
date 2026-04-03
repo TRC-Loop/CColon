@@ -849,6 +849,11 @@ func (vm *VM) opAdd(a, b Value) (Value, error) {
 		if bv, ok := b.(*StringValue); ok {
 			return &StringValue{Val: av.Val + bv.Val}, nil
 		}
+		return &StringValue{Val: av.Val + b.String()}, nil
+	}
+	// If right side is string, coerce left to string
+	if bv, ok := b.(*StringValue); ok {
+		return &StringValue{Val: a.String() + bv.Val}, nil
 	}
 	return nil, vm.runtimeError("cannot add %s and %s", a.String(), b.String())
 }
