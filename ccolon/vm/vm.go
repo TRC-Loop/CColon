@@ -92,6 +92,10 @@ func (vm *VM) GetGlobal(name string) Value {
 	return vm.globals[name]
 }
 
+func (vm *VM) DeleteGlobal(name string) {
+	delete(vm.globals, name)
+}
+
 func (vm *VM) push(v Value) {
 	if vm.sp >= len(vm.stack) {
 		vm.stack = append(vm.stack, make([]Value, 256)...)

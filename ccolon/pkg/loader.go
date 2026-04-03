@@ -89,8 +89,10 @@ func LoadPackages(machine *vm.VM, compileSource func(string) (*compiler.FuncObje
 				for _, n := range globalsBefore {
 					beforeSet[n] = true
 				}
+				newGlobals := []string{}
 				for _, n := range globalsAfter {
 					if !beforeSet[n] {
+						newGlobals = append(newGlobals, n)
 						val := machine.GetGlobal(n)
 						if fn, ok := val.(*vm.FuncValue); ok {
 							// Wrap CColon function as a callable module method
@@ -104,6 +106,12 @@ func LoadPackages(machine *vm.VM, compileSource func(string) (*compiler.FuncObje
 							}
 						}
 					}
+				}
+
+				// Remove package globals so they don't pollute the namespace.
+				// Users must import the package to access its functions.
+				for _, n := range newGlobals {
+					machine.DeleteGlobal(n)
 				}
 
 				machine.RegisterModule(m.Name, mod)
