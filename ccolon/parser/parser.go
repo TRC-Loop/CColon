@@ -83,7 +83,9 @@ func (p *Parser) parseStatement() (Stmt, error) {
 	case lexer.TOKEN_IMPORT:
 		return p.parseImport()
 	case lexer.TOKEN_VAR:
-		return p.parseVarDecl()
+		return p.parseVarDecl(false)
+	case lexer.TOKEN_CONST:
+		return p.parseVarDecl(true)
 	case lexer.TOKEN_FUNCTION:
 		return p.parseFuncDecl()
 	case lexer.TOKEN_IF:
@@ -152,8 +154,8 @@ func (p *Parser) parseImport() (*ImportStmt, error) {
 	return &ImportStmt{Module: name.Literal, P: Position{tok.Line, tok.Col}}, nil
 }
 
-func (p *Parser) parseVarDecl() (*VarDecl, error) {
-	tok := p.advance() // consume 'var'
+func (p *Parser) parseVarDecl(isConst bool) (*VarDecl, error) {
+	tok := p.advance() // consume 'var' or 'const'
 
 	// type name (built-in type or class name)
 	typeTok := p.current()
@@ -180,6 +182,7 @@ func (p *Parser) parseVarDecl() (*VarDecl, error) {
 		TypeName: typeTok.Literal,
 		Name:     name.Literal,
 		Value:    value,
+		IsConst:  isConst,
 		P:        Position{tok.Line, tok.Col},
 	}, nil
 }

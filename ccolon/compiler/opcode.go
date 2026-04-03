@@ -63,6 +63,8 @@ const (
 
 	OP_BREAK_PLACEHOLDER
 	OP_CONTINUE_PLACEHOLDER
+
+	OP_MARK_CONST
 )
 
 type FuncObject struct {
@@ -114,6 +116,7 @@ var opNames = map[OpCode]string{
 	OP_DICT_NEW: "DICT_NEW",
 	OP_TRY_BEGIN: "TRY_BEGIN", OP_TRY_END: "TRY_END", OP_THROW: "THROW",
 	OP_IMPORT_FILE: "IMPORT_FILE",
+	OP_MARK_CONST:  "MARK_CONST",
 }
 
 func (op OpCode) String() string {

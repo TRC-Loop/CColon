@@ -50,11 +50,12 @@ type VM struct {
 	sp          int
 	frames      []CallFrame
 	fp          int
-	globals     map[string]Value
-	modules     map[string]*ModuleValue
-	imported    map[string]bool
-	handlers    []ExceptionHandler
-	FileLoader  func(path string) (*compiler.FuncObject, error)
+	globals       map[string]Value
+	constants     map[string]bool
+	modules       map[string]*ModuleValue
+	imported      map[string]bool
+	handlers      []ExceptionHandler
+	FileLoader    func(path string) (*compiler.FuncObject, error)
 	importedFiles map[string]bool
 }
 
@@ -64,6 +65,7 @@ func New() *VM {
 		sp:            0,
 		frames:        make([]CallFrame, 0, 64),
 		globals:       make(map[string]Value),
+		constants:     make(map[string]bool),
 		modules:       make(map[string]*ModuleValue),
 		imported:      make(map[string]bool),
 		importedFiles: make(map[string]bool),
@@ -385,7 +387,16 @@ func (vm *VM) execute() error {
 		case compiler.OP_STORE_GLOBAL:
 			idx := vm.readUint16()
 			name := vm.getConstant(idx).(string)
+			if vm.constants[name] {
+				vm.pop() // discard the value
+				return vm.runtimeError("cannot reassign constant '%s'", name)
+			}
 			vm.globals[name] = vm.pop()
+
+		case compiler.OP_MARK_CONST:
+			idx := vm.readUint16()
+			name := vm.getConstant(idx).(string)
+			vm.constants[name] = true
 
 		case compiler.OP_CALL:
 			argCount := int(vm.readByte())
@@ -549,15 +560,24 @@ func (vm *VM) execute() error {
 			idx := vm.readUint16()
 			fieldName := vm.getConstant(idx).(string)
 			object := vm.pop()
-			inst, ok := object.(*InstanceValue)
-			if !ok {
+			switch obj := object.(type) {
+			case *InstanceValue:
+				val, exists := obj.Fields[fieldName]
+				if !exists {
+					return vm.runtimeError("instance of '%s' has no field '%s'", obj.Class.Name, fieldName)
+				}
+				vm.push(val)
+			case *ModuleValue:
+				if obj.Properties != nil {
+					if val, exists := obj.Properties[fieldName]; exists {
+						vm.push(val)
+						break
+					}
+				}
+				return vm.runtimeError("module '%s' has no property '%s'", obj.Name, fieldName)
+			default:
 				return vm.runtimeError("cannot access field '%s' on %s", fieldName, object.String())
 			}
-			val, exists := inst.Fields[fieldName]
-			if !exists {
-				return vm.runtimeError("instance of '%s' has no field '%s'", inst.Class.Name, fieldName)
-			}
-			vm.push(val)
 
 		case compiler.OP_SET_FIELD:
 			idx := vm.readUint16()

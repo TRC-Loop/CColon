@@ -21,25 +21,12 @@ func toFloat(v vm.Value) (float64, bool) {
 func NewMathModule() *vm.ModuleValue {
 	return &vm.ModuleValue{
 		Name: "math",
+		Properties: map[string]vm.Value{
+			"pi":  &vm.FloatValue{Val: math.Pi},
+			"e":   &vm.FloatValue{Val: math.E},
+			"inf": &vm.FloatValue{Val: math.Inf(1)},
+		},
 		Methods: map[string]*vm.NativeFuncValue{
-			"pi": {
-				Name: "math.pi",
-				Fn: func(args []vm.Value) (vm.Value, error) {
-					return &vm.FloatValue{Val: math.Pi}, nil
-				},
-			},
-			"e": {
-				Name: "math.e",
-				Fn: func(args []vm.Value) (vm.Value, error) {
-					return &vm.FloatValue{Val: math.E}, nil
-				},
-			},
-			"inf": {
-				Name: "math.inf",
-				Fn: func(args []vm.Value) (vm.Value, error) {
-					return &vm.FloatValue{Val: math.Inf(1)}, nil
-				},
-			},
 			"sqrt": {
 				Name: "math.sqrt",
 				Fn: func(args []vm.Value) (vm.Value, error) {

@@ -201,6 +201,7 @@ type VarDecl struct {
 	TypeName string
 	Name     string
 	Value    Expr
+	IsConst  bool
 	P        Position
 }
 

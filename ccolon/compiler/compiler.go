@@ -22,16 +22,18 @@ type LoopContext struct {
 }
 
 type Compiler struct {
-	function   *FuncObject
-	locals     []Local
-	scopeDepth int
-	loops      []LoopContext
+	function    *FuncObject
+	locals      []Local
+	scopeDepth  int
+	loops       []LoopContext
+	constLocals map[string]bool // tracks const local variable names
 }
 
 func New() *Compiler {
 	fn := &FuncObject{Name: "<script>"}
 	return &Compiler{
-		function: fn,
+		function:    fn,
+		constLocals: make(map[string]bool),
 	}
 }
 
@@ -189,12 +191,19 @@ func (c *Compiler) compileVarDecl(s *parser.VarDecl) error {
 
 	if c.scopeDepth > 0 {
 		c.addLocal(s.Name)
+		if s.IsConst {
+			c.constLocals[s.Name] = true
+		}
 		return nil
 	}
 
 	idx := c.addConstant(s.Name)
 	c.emitOp(OP_STORE_GLOBAL, s.P.Line)
 	c.emitUint16(idx, s.P.Line)
+	if s.IsConst {
+		c.emitOp(OP_MARK_CONST, s.P.Line)
+		c.emitUint16(idx, s.P.Line)
+	}
 	return nil
 }
 
@@ -208,8 +217,9 @@ func (c *Compiler) compileFuncDecl(s *parser.FuncDecl) error {
 	}
 
 	fnCompiler := &Compiler{
-		function:   &FuncObject{Name: s.Name, Arity: requiredCount, MaxArity: len(s.Params)},
-		scopeDepth: 1,
+		function:    &FuncObject{Name: s.Name, Arity: requiredCount, MaxArity: len(s.Params)},
+		scopeDepth:  1,
+		constLocals: make(map[string]bool),
 	}
 
 	// build defaults list
@@ -262,6 +272,10 @@ func (c *Compiler) compileFuncDecl(s *parser.FuncDecl) error {
 func (c *Compiler) compileAssign(s *parser.AssignStmt) error {
 	switch target := s.Target.(type) {
 	case *parser.Identifier:
+		// check for const reassignment (local)
+		if c.constLocals[target.Name] {
+			return fmt.Errorf("line %d:%d: cannot reassign constant '%s'", s.P.Line, s.P.Col, target.Name)
+		}
 		if err := c.compileExpr(s.Value); err != nil {
 			return err
 		}
@@ -858,7 +872,8 @@ func (c *Compiler) compileClassDecl(s *parser.ClassDecl) error {
 				Arity:    requiredCount + 1, // +1 for self
 				MaxArity: len(m.Params) + 1, // +1 for self
 			},
-			scopeDepth: 1,
+			scopeDepth:  1,
+			constLocals: make(map[string]bool),
 		}
 
 		// build defaults (first entry nil for self)

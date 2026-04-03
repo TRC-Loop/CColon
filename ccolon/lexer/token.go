@@ -16,6 +16,7 @@ const (
 
 	// Keywords
 	TOKEN_VAR
+	TOKEN_CONST
 	TOKEN_FUNCTION
 	TOKEN_RETURN
 	TOKEN_IF
@@ -86,6 +87,7 @@ const (
 
 var keywords = map[string]TokenType{
 	"var":      TOKEN_VAR,
+	"const":    TOKEN_CONST,
 	"function": TOKEN_FUNCTION,
 	"return":   TOKEN_RETURN,
 	"if":       TOKEN_IF,
@@ -139,7 +141,7 @@ type Token struct {
 var tokenNames = map[TokenType]string{
 	TOKEN_EOF: "EOF", TOKEN_INT_LIT: "INT", TOKEN_FLOAT_LIT: "FLOAT",
 	TOKEN_STRING_LIT: "STRING", TOKEN_FSTRING_LIT: "FSTRING", TOKEN_IDENT: "IDENT",
-	TOKEN_VAR: "var", TOKEN_FUNCTION: "function", TOKEN_RETURN: "return",
+	TOKEN_VAR: "var", TOKEN_CONST: "const", TOKEN_FUNCTION: "function", TOKEN_RETURN: "return",
 	TOKEN_IF: "if", TOKEN_ELSE: "else", TOKEN_FOR: "for", TOKEN_IN: "in",
 	TOKEN_WHILE: "while", TOKEN_IMPORT: "import", TOKEN_AND: "and",
 	TOKEN_OR: "or", TOKEN_NOT: "not", TOKEN_TRUE: "true", TOKEN_FALSE: "false",

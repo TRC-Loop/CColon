@@ -49,8 +49,9 @@ type NativeFuncValue struct {
 	Fn   func(args []Value) (Value, error)
 }
 type ModuleValue struct {
-	Name    string
-	Methods map[string]*NativeFuncValue
+	Name       string
+	Methods    map[string]*NativeFuncValue
+	Properties map[string]Value
 }
 
 type FieldDef struct {
