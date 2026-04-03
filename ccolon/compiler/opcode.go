@@ -65,6 +65,7 @@ const (
 	OP_CONTINUE_PLACEHOLDER
 
 	OP_MARK_CONST
+	OP_CALL_KW
 )
 
 type FuncObject struct {
@@ -72,6 +73,7 @@ type FuncObject struct {
 	Arity      int           // minimum required args
 	MaxArity   int           // total params including optional
 	Defaults   []interface{} // default values for optional params (nil for required)
+	ParamNames []string      // parameter names for kwargs resolution
 	Code       []byte
 	Constants  []interface{}
 	Lines      []int
@@ -117,6 +119,7 @@ var opNames = map[OpCode]string{
 	OP_TRY_BEGIN: "TRY_BEGIN", OP_TRY_END: "TRY_END", OP_THROW: "THROW",
 	OP_IMPORT_FILE: "IMPORT_FILE",
 	OP_MARK_CONST:  "MARK_CONST",
+	OP_CALL_KW:     "CALL_KW",
 }
 
 func (op OpCode) String() string {

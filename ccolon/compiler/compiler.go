@@ -64,10 +64,13 @@ func (c *Compiler) emitBytes(line int, bytes ...byte) {
 }
 
 func (c *Compiler) addConstant(val interface{}) int {
-	// dedup strings and numbers
-	for i, existing := range c.function.Constants {
-		if existing == val {
-			return i
+	// dedup strings and numbers (skip non-comparable types)
+	switch val.(type) {
+	case string, int64, float64, bool:
+		for i, existing := range c.function.Constants {
+			if existing == val {
+				return i
+			}
 		}
 	}
 	c.function.Constants = append(c.function.Constants, val)
@@ -244,9 +247,12 @@ func (c *Compiler) compileFuncDecl(s *parser.FuncDecl) error {
 	}
 	fnCompiler.function.Defaults = defaults
 
-	for _, param := range s.Params {
+	paramNames := make([]string, len(s.Params))
+	for i, param := range s.Params {
 		fnCompiler.addLocal(param.Name)
+		paramNames[i] = param.Name
 	}
+	fnCompiler.function.ParamNames = paramNames
 
 	for _, stmt := range s.Body {
 		if err := fnCompiler.compileStmt(stmt); err != nil {
@@ -717,8 +723,27 @@ func (c *Compiler) compileCall(e *parser.CallExpr) error {
 			return err
 		}
 	}
-	c.emitOp(OP_CALL, e.P.Line)
-	c.emit(byte(len(e.Args)), e.P.Line)
+	if len(e.NamedArgs) > 0 {
+		// emit named arg values, then emit their names as a constant list
+		for _, na := range e.NamedArgs {
+			if err := c.compileExpr(na.Value); err != nil {
+				return err
+			}
+		}
+		// build names list as a constant
+		names := make([]string, len(e.NamedArgs))
+		for i, na := range e.NamedArgs {
+			names[i] = na.Name
+		}
+		namesIdx := c.addConstant(names)
+		c.emitOp(OP_CALL_KW, e.P.Line)
+		c.emit(byte(len(e.Args)), e.P.Line)
+		c.emit(byte(len(e.NamedArgs)), e.P.Line)
+		c.emitUint16(namesIdx, e.P.Line)
+	} else {
+		c.emitOp(OP_CALL, e.P.Line)
+		c.emit(byte(len(e.Args)), e.P.Line)
+	}
 	return nil
 }
 

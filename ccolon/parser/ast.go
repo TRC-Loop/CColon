@@ -70,10 +70,16 @@ type UnaryExpr struct {
 	P       Position
 }
 
+type NamedArg struct {
+	Name  string
+	Value Expr
+}
+
 type CallExpr struct {
-	Callee Expr
-	Args   []Expr
-	P      Position
+	Callee    Expr
+	Args      []Expr
+	NamedArgs []NamedArg
+	P         Position
 }
 
 type MethodCallExpr struct {

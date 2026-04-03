@@ -405,6 +405,83 @@ func (vm *VM) execute() error {
 				return err
 			}
 
+		case compiler.OP_CALL_KW:
+			posCount := int(vm.readByte())
+			namedCount := int(vm.readByte())
+			namesIdx := vm.readUint16()
+			names := vm.getConstant(namesIdx).([]string)
+
+			// pop named arg values (in order)
+			namedValues := make([]Value, namedCount)
+			for i := namedCount - 1; i >= 0; i-- {
+				namedValues[i] = vm.pop()
+			}
+			// pop positional args
+			posValues := make([]Value, posCount)
+			for i := posCount - 1; i >= 0; i-- {
+				posValues[i] = vm.pop()
+			}
+			callee := vm.pop() // pop the function
+
+			// resolve the function to get param names
+			funcVal, ok := callee.(*FuncValue)
+			if !ok {
+				return vm.runtimeError("keyword arguments are only supported on user-defined functions")
+			}
+			paramNames := funcVal.Obj.ParamNames
+			maxArity := funcVal.Obj.MaxArity
+			if maxArity == 0 {
+				maxArity = funcVal.Obj.Arity
+			}
+
+			// build the full arg list
+			fullArgs := make([]Value, maxArity)
+			// fill positional first
+			for i := 0; i < posCount && i < maxArity; i++ {
+				fullArgs[i] = posValues[i]
+			}
+			// fill named args by matching param names
+			for i, name := range names {
+				found := false
+				for j, pn := range paramNames {
+					if pn == name {
+						if fullArgs[j] != nil {
+							return vm.runtimeError("duplicate argument for parameter '%s'", name)
+						}
+						fullArgs[j] = namedValues[i]
+						found = true
+						break
+					}
+				}
+				if !found {
+					return vm.runtimeError("unknown keyword argument '%s'", name)
+				}
+			}
+			// fill defaults for any remaining nil slots
+			for i := 0; i < maxArity; i++ {
+				if fullArgs[i] == nil {
+					if funcVal.Obj.Defaults != nil && i < len(funcVal.Obj.Defaults) && funcVal.Obj.Defaults[i] != nil {
+						fullArgs[i] = vm.wrapConstant(funcVal.Obj.Defaults[i])
+					} else if i >= funcVal.Obj.Arity {
+						fullArgs[i] = &NilValue{}
+					} else {
+						return vm.runtimeError("missing required argument '%s'", paramNames[i])
+					}
+				}
+			}
+
+			// push function and resolved args back onto the stack
+			// callValue expects stack: [..., callee, arg0, arg1, ...]
+			vm.push(callee)
+			for _, a := range fullArgs {
+				vm.push(a)
+			}
+			totalArgs := len(fullArgs)
+			calleeOnStack := vm.stack[vm.sp-1-totalArgs]
+			if err := vm.callValue(calleeOnStack, totalArgs); err != nil {
+				return err
+			}
+
 		case compiler.OP_RETURN:
 			result := vm.pop()
 			frame := vm.frame()

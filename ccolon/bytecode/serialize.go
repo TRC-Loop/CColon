@@ -11,17 +11,18 @@ import (
 
 var magic = [4]byte{'C', 'C', 'L', 'B'}
 
-const formatVersion uint16 = 1
+const formatVersion uint16 = 2
 
 // Type tags for constants
 const (
-	tagNil      byte = 0
-	tagInt      byte = 1
-	tagFloat    byte = 2
-	tagString   byte = 3
-	tagFunc     byte = 4
-	tagClassDef byte = 5
-	tagBigInt   byte = 6
+	tagNil        byte = 0
+	tagInt        byte = 1
+	tagFloat      byte = 2
+	tagString     byte = 3
+	tagFunc       byte = 4
+	tagClassDef   byte = 5
+	tagBigInt     byte = 6
+	tagStringList byte = 7
 )
 
 // Encode serializes a FuncObject into a portable binary format.
@@ -121,6 +122,12 @@ func (w *writer) writeFunc(fn *compiler.FuncObject) error {
 	w.writeUint16(uint16(fn.MaxArity))
 	w.writeUint16(uint16(fn.LocalCount))
 
+	// param names
+	w.writeUint16(uint16(len(fn.ParamNames)))
+	for _, n := range fn.ParamNames {
+		w.writeString(n)
+	}
+
 	// defaults
 	w.writeUint16(uint16(len(fn.Defaults)))
 	for _, d := range fn.Defaults {
@@ -179,6 +186,12 @@ func (w *writer) writeConstant(val interface{}) error {
 		w.writeByte(byte(v.Sign() + 1)) // 0=negative, 1=zero, 2=positive
 		w.writeUint32(uint32(len(b)))
 		w.writeBytes(b)
+	case []string:
+		w.writeByte(tagStringList)
+		w.writeUint16(uint16(len(v)))
+		for _, s := range v {
+			w.writeString(s)
+		}
 	default:
 		return fmt.Errorf("cannot serialize constant of type %T", val)
 	}
@@ -318,6 +331,19 @@ func (r *reader) readFunc() (*compiler.FuncObject, error) {
 	}
 	fn.LocalCount = int(localCount)
 
+	// param names
+	numParams, err := r.readUint16()
+	if err != nil {
+		return nil, err
+	}
+	fn.ParamNames = make([]string, numParams)
+	for i := range fn.ParamNames {
+		fn.ParamNames[i], err = r.readString()
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	// defaults
 	numDefaults, err := r.readUint16()
 	if err != nil {
@@ -407,6 +433,19 @@ func (r *reader) readConstant() (interface{}, error) {
 			v.Neg(v)
 		}
 		return v, nil
+	case tagStringList:
+		count, err := r.readUint16()
+		if err != nil {
+			return nil, err
+		}
+		list := make([]string, count)
+		for i := range list {
+			list[i], err = r.readString()
+			if err != nil {
+				return nil, err
+			}
+		}
+		return list, nil
 	default:
 		return nil, fmt.Errorf("unknown constant tag %d at offset %d", tag, r.pos)
 	}

@@ -534,7 +534,7 @@ func (p *Parser) parseInfix(left Expr, prec int) (Expr, error) {
 		}
 		if p.current().Type == lexer.TOKEN_LPAREN {
 			p.advance()
-			args, err := p.parseArgList()
+			args, _, err := p.parseArgList()
 			if err != nil {
 				return nil, err
 			}
@@ -554,11 +554,11 @@ func (p *Parser) parseInfix(left Expr, prec int) (Expr, error) {
 
 	case lexer.TOKEN_LPAREN:
 		p.advance()
-		args, err := p.parseArgList()
+		args, namedArgs, err := p.parseArgList()
 		if err != nil {
 			return nil, err
 		}
-		return &CallExpr{Callee: left, Args: args, P: Position{tok.Line, tok.Col}}, nil
+		return &CallExpr{Callee: left, Args: args, NamedArgs: namedArgs, P: Position{tok.Line, tok.Col}}, nil
 
 	case lexer.TOKEN_LBRACKET:
 		p.advance()
@@ -582,18 +582,36 @@ func (p *Parser) parseInfix(left Expr, prec int) (Expr, error) {
 	}
 }
 
-func (p *Parser) parseArgList() ([]Expr, error) {
+func (p *Parser) parseArgList() ([]Expr, []NamedArg, error) {
 	var args []Expr
+	var namedArgs []NamedArg
 	if p.current().Type == lexer.TOKEN_RPAREN {
 		p.advance()
-		return args, nil
+		return args, namedArgs, nil
 	}
+	seenNamed := false
 	for {
-		arg, err := p.parseExpression(0)
-		if err != nil {
-			return nil, err
+		// check for named arg: ident = expr
+		if p.current().Type == lexer.TOKEN_IDENT && p.peek().Type == lexer.TOKEN_ASSIGN {
+			name := p.advance() // consume ident
+			p.advance()         // consume =
+			val, err := p.parseExpression(0)
+			if err != nil {
+				return nil, nil, err
+			}
+			namedArgs = append(namedArgs, NamedArg{Name: name.Literal, Value: val})
+			seenNamed = true
+		} else {
+			if seenNamed {
+				return nil, nil, fmt.Errorf("line %d:%d: positional argument after keyword argument",
+					p.current().Line, p.current().Col)
+			}
+			arg, err := p.parseExpression(0)
+			if err != nil {
+				return nil, nil, err
+			}
+			args = append(args, arg)
 		}
-		args = append(args, arg)
 		if p.current().Type == lexer.TOKEN_COMMA {
 			p.advance()
 		} else {
@@ -601,9 +619,9 @@ func (p *Parser) parseArgList() ([]Expr, error) {
 		}
 	}
 	if _, err := p.expect(lexer.TOKEN_RPAREN); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return args, nil
+	return args, namedArgs, nil
 }
 
 func (p *Parser) parseListLiteral() (Expr, error) {
@@ -905,7 +923,7 @@ func (p *Parser) parseSuperCall() (Expr, error) {
 	if _, err := p.expect(lexer.TOKEN_LPAREN); err != nil {
 		return nil, err
 	}
-	args, err := p.parseArgList()
+	args, _, err := p.parseArgList()
 	if err != nil {
 		return nil, err
 	}
