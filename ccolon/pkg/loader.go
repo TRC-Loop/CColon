@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/TRC-Loop/ccolon/compiler"
 	"github.com/TRC-Loop/ccolon/vm"
@@ -115,6 +116,12 @@ func LoadPackages(machine *vm.VM, compileSource func(string) (*compiler.FuncObje
 				}
 
 				machine.RegisterModule(m.Name, mod)
+				// Also register under underscore alias so packages with
+				// hyphens can be imported using underscores (e.g. ccl_testpkg
+				// for ccl-testpkg), since "-" is not valid in identifiers.
+				if strings.Contains(m.Name, "-") {
+					machine.RegisterModule(strings.ReplaceAll(m.Name, "-", "_"), mod)
+				}
 			}
 		}
 	}
