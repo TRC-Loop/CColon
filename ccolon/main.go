@@ -72,14 +72,15 @@ func printHelp() {
 	fmt.Println("Usage: ccolon [command] [options]")
 	fmt.Println()
 	fmt.Println("Commands:")
-	fmt.Println("  <file.ccl>              Run a CColon source file")
-	fmt.Println("  <file.cclb>             Run a compiled bytecode file")
-	fmt.Println("  fmt <file.ccl>          Format a source file")
-	fmt.Println("  compile <file>          Compile to bytecode (.cclb)")
-	fmt.Println("  pkg install <url[@ver]> Install a package from GitHub")
-	fmt.Println("  pkg remove <name>       Remove an installed package")
-	fmt.Println("  pkg list                List installed packages")
-	fmt.Println("  pkg init                Create a ccolon.json")
+	fmt.Println("  <file.ccl>                    Run a CColon source file")
+	fmt.Println("  <file.cclb>                   Run a compiled bytecode file")
+	fmt.Println("  fmt <file.ccl>                Format a source file")
+	fmt.Println("  compile [-o out] <file>       Compile to bytecode (.cclb)")
+	fmt.Println("  pkg install [--local] <url>   Install a package from GitHub")
+	fmt.Println("  pkg remove <name>             Remove an installed package")
+	fmt.Println("  pkg upgrade <name>            Upgrade a package to latest")
+	fmt.Println("  pkg list                      List installed packages")
+	fmt.Println("  pkg init                      Create a ccolon.json")
 	fmt.Println()
 	fmt.Println("Options:")
 	fmt.Println("  --version, -v    Print version")
@@ -139,21 +140,35 @@ func runFormatter(args []string) {
 
 func runCompile(args []string) {
 	platform := ""
+	output := ""
+	bundle := false
 	var files []string
 	for i := 0; i < len(args); i++ {
-		if args[i] == "--platform" {
+		switch args[i] {
+		case "--platform":
 			platform = fmt.Sprintf("%s/%s", os.Getenv("GOOS"), os.Getenv("GOARCH"))
 			if platform == "/" {
 				platform = "unknown"
 			}
-		} else {
+		case "--bundle":
+			bundle = true
+		case "-o", "--output":
+			if i+1 < len(args) {
+				i++
+				output = args[i]
+			} else {
+				fmt.Fprintln(os.Stderr, "error: -o requires a file path")
+				os.Exit(1)
+			}
+		default:
 			files = append(files, args[i])
 		}
 	}
 	if len(files) == 0 {
-		fmt.Fprintln(os.Stderr, "usage: ccolon compile [--platform] <file.ccl> ...")
+		fmt.Fprintln(os.Stderr, "usage: ccolon compile [--platform] [--bundle] [-o output] <file.ccl> ...")
 		os.Exit(1)
 	}
+	_ = bundle // reserved for future bundling support
 
 	for _, f := range files {
 		source, err := os.ReadFile(f)
@@ -168,7 +183,10 @@ func runCompile(args []string) {
 		if err != nil {
 			fatal(err)
 		}
-		outPath := strings.TrimSuffix(f, filepath.Ext(f)) + ".cclb"
+		outPath := output
+		if outPath == "" {
+			outPath = strings.TrimSuffix(f, filepath.Ext(f)) + ".cclb"
+		}
 		if err := os.WriteFile(outPath, data, 0644); err != nil {
 			fatal(err)
 		}
@@ -229,6 +247,14 @@ func runPkg(args []string) {
 			} else {
 				fmt.Printf("  %s@%s  (%s)\n", p.Name, p.Version, p.Path)
 			}
+		}
+	case "upgrade":
+		if len(args) < 2 {
+			fmt.Fprintln(os.Stderr, "usage: ccolon pkg upgrade <name>")
+			os.Exit(1)
+		}
+		if err := pkg.Upgrade(args[1], local); err != nil {
+			fatal(err)
 		}
 	case "init":
 		if err := pkg.Init(); err != nil {

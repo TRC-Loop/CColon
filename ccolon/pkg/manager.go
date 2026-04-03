@@ -163,6 +163,30 @@ func Install(repoURL, version string, local bool) error {
 	return nil
 }
 
+// Upgrade re-installs a package at the latest version.
+func Upgrade(name string, local bool) error {
+	// Find current installation to get the repo URL
+	packages, err := List()
+	if err != nil {
+		return err
+	}
+	var repoURL string
+	for _, p := range packages {
+		if p.Name == name && p.Repository != "" {
+			repoURL = p.Repository
+			break
+		}
+	}
+	if repoURL == "" {
+		return fmt.Errorf("cannot upgrade '%s': no repository URL found (was it installed with an older version?)", name)
+	}
+	// Remove old version first
+	if err := Remove(name); err != nil {
+		return err
+	}
+	return Install(repoURL, "", local)
+}
+
 // Remove deletes an installed package.
 func Remove(name string) error {
 	pkgDir, err := packagesDir()
@@ -281,17 +305,19 @@ func (pr *progressReader) Read(p []byte) (int, error) {
 	n, err := pr.reader.Read(p)
 	pr.current += int64(n)
 
-	barWidth := 20
+	barWidth := 30
 	if pr.total > 0 {
 		pct := float64(pr.current) / float64(pr.total)
 		filled := int(pct * float64(barWidth))
 		if filled > barWidth {
 			filled = barWidth
 		}
-		bar := strings.Repeat("#", filled) + strings.Repeat("-", barWidth-filled)
-		fmt.Printf("\r[%s] %3.0f%% downloading %s", bar, pct*100, pr.label)
+		bar := strings.Repeat("\u2588", filled) + strings.Repeat("\u2591", barWidth-filled)
+		fmt.Printf("\r  \033[36m%s\033[0m %3.0f%% %s", bar, pct*100, pr.label)
 	} else {
-		fmt.Printf("\r[--------] %d bytes downloading %s", pr.current, pr.label)
+		spinner := []string{"\u280b", "\u2819", "\u2839", "\u2838", "\u283c", "\u2834", "\u2826", "\u2827", "\u2807", "\u280f"}
+		idx := int(pr.current/1024) % len(spinner)
+		fmt.Printf("\r  %s %.1f KB %s", spinner[idx], float64(pr.current)/1024, pr.label)
 	}
 	return n, err
 }
