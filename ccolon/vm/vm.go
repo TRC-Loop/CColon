@@ -45,6 +45,27 @@ type ExceptionHandler struct {
 	FuncObj  *compiler.FuncObject
 }
 
+// Pre-allocated singleton values to avoid allocation in hot paths
+var valTrue = &BoolValue{Val: true}
+var valFalse = &BoolValue{Val: false}
+var valNil = &NilValue{}
+
+// Small integer cache to avoid allocation for common values
+var smallInts [256]*IntValue
+
+func init() {
+	for i := range smallInts {
+		smallInts[i] = &IntValue{Val: int64(i - 128)}
+	}
+}
+
+func cachedInt(v int64) *IntValue {
+	if v >= -128 && v < 128 {
+		return smallInts[v+128]
+	}
+	return &IntValue{Val: v}
+}
+
 type VM struct {
 	stack       []Value
 	sp          int
@@ -154,7 +175,7 @@ func (vm *VM) Run(fn *compiler.FuncObject) error {
 		basePtr:  0,
 	})
 	vm.fp = len(vm.frames)
-	return vm.execute()
+	return vm.execute(0)
 }
 
 // CallFunc calls a CColon function from Go code with the given arguments.
@@ -209,14 +230,15 @@ func (vm *VM) CallFunc(fn Value, args []Value) (Value, error) {
 	})
 	vm.fp = len(vm.frames)
 
-	// Run until the frame returns
-	if err := vm.execute(); err != nil {
+	// Run until the frame returns. stopFP = savedFP so execute stops
+	// when it returns past our frame instead of continuing the caller.
+	if err := vm.execute(savedFP); err != nil {
 		vm.frames = vm.frames[:savedFrames]
 		vm.fp = savedFP
 		return nil, err
 	}
 
-	// Restore frame state so we don't fall into the caller's bytecode
+	// Restore frame state
 	vm.frames = vm.frames[:savedFrames]
 	vm.fp = savedFP
 
@@ -227,27 +249,64 @@ func (vm *VM) CallFunc(fn Value, args []Value) (Value, error) {
 	return &NilValue{}, nil
 }
 
-func (vm *VM) execute() error {
+func (vm *VM) execute(stopFP int) error {
+	// Cache hot frame fields as locals for performance.
+	// syncFrame saves locals back to the frame; loadFrame reads them.
+	f := &vm.frames[vm.fp-1]
+	code := f.function.Code
+	ip := f.ip
+	consts := f.function.Constants
+	bp := f.basePtr
+
+	syncFrame := func() { f.ip = ip }
+	rtError := func(format string, args ...interface{}) error {
+		syncFrame()
+		return vm.runtimeError(format, args...)
+	}
+	loadFrame := func() {
+		f = &vm.frames[vm.fp-1]
+		code = f.function.Code
+		ip = f.ip
+		consts = f.function.Constants
+		bp = f.basePtr
+	}
+
+	// Inline readByte for the hot path
+	readByte := func() byte {
+		if ip >= len(code) {
+			return byte(compiler.OP_HALT)
+		}
+		b := code[ip]
+		ip++
+		return b
+	}
+	readUint16 := func() int {
+		hi := readByte()
+		lo := readByte()
+		return int(hi)<<8 | int(lo)
+	}
+
 	for {
-		op := compiler.OpCode(vm.readByte())
+		op := compiler.OpCode(readByte())
 
 		switch op {
 		case compiler.OP_HALT:
+			syncFrame()
 			return nil
 
 		case compiler.OP_CONST:
-			idx := vm.readUint16()
-			c := vm.getConstant(idx)
+			idx := readUint16()
+			c := consts[idx]
 			vm.push(vm.wrapConstant(c))
 
 		case compiler.OP_TRUE:
-			vm.push(&BoolValue{Val: true})
+			vm.push(valTrue)
 
 		case compiler.OP_FALSE:
-			vm.push(&BoolValue{Val: false})
+			vm.push(valFalse)
 
 		case compiler.OP_NIL:
-			vm.push(&NilValue{})
+			vm.push(valNil)
 
 		case compiler.OP_POP:
 			vm.pop()
@@ -258,11 +317,22 @@ func (vm *VM) execute() error {
 		case compiler.OP_ADD:
 			b := vm.pop()
 			a := vm.pop()
+			// Inline fast path for int+int (most common in numeric code)
+			if ai, ok := a.(*IntValue); ok {
+				if bi, ok := b.(*IntValue); ok {
+					if !addOverflows(ai.Val, bi.Val) {
+						vm.push(cachedInt(ai.Val + bi.Val))
+						continue
+					}
+				}
+			}
 			result, err := vm.opAdd(a, b)
 			if err != nil {
+				syncFrame()
 				if e := vm.tryThrowError(err); e != nil {
 					return e
 				}
+				loadFrame()
 				continue
 			}
 			vm.push(result)
@@ -270,11 +340,22 @@ func (vm *VM) execute() error {
 		case compiler.OP_SUB:
 			b := vm.pop()
 			a := vm.pop()
+			// Inline fast path for int-int
+			if ai, ok := a.(*IntValue); ok {
+				if bi, ok := b.(*IntValue); ok {
+					if !subOverflows(ai.Val, bi.Val) {
+						vm.push(cachedInt(ai.Val - bi.Val))
+						continue
+					}
+				}
+			}
 			result, err := vm.opArith(a, b, "-")
 			if err != nil {
+				syncFrame()
 				if e := vm.tryThrowError(err); e != nil {
 					return e
 				}
+				loadFrame()
 				continue
 			}
 			vm.push(result)
@@ -284,9 +365,11 @@ func (vm *VM) execute() error {
 			a := vm.pop()
 			result, err := vm.opArith(a, b, "*")
 			if err != nil {
+				syncFrame()
 				if e := vm.tryThrowError(err); e != nil {
 					return e
 				}
+				loadFrame()
 				continue
 			}
 			vm.push(result)
@@ -296,9 +379,11 @@ func (vm *VM) execute() error {
 			a := vm.pop()
 			result, err := vm.opDiv(a, b)
 			if err != nil {
+				syncFrame()
 				if e := vm.tryThrowError(err); e != nil {
 					return e
 				}
+				loadFrame()
 				continue
 			}
 			vm.push(result)
@@ -308,9 +393,11 @@ func (vm *VM) execute() error {
 			a := vm.pop()
 			result, err := vm.opMod(a, b)
 			if err != nil {
+				syncFrame()
 				if e := vm.tryThrowError(err); e != nil {
 					return e
 				}
+				loadFrame()
 				continue
 			}
 			vm.push(result)
@@ -320,70 +407,107 @@ func (vm *VM) execute() error {
 			switch val := v.(type) {
 			case *IntValue:
 				if val.Val == math.MinInt64 {
+					syncFrame()
 					if e := vm.tryThrowError(vm.runtimeError("integer overflow")); e != nil {
 						return e
 					}
+					loadFrame()
 					continue
 				}
-				vm.push(&IntValue{Val: -val.Val})
+				vm.push(cachedInt(-val.Val))
 			case *SintValue:
 				vm.push(&SintValue{Val: new(big.Int).Neg(val.Val)})
 			case *FloatValue:
 				vm.push(&FloatValue{Val: -val.Val})
 			default:
-				return vm.runtimeError("cannot negate %s", v.String())
+				return rtError("cannot negate %s", v.String())
 			}
 
 		case compiler.OP_NOT:
 			v := vm.pop()
-			vm.push(&BoolValue{Val: !IsTruthy(v)})
+			if IsTruthy(v) {
+				vm.push(valFalse)
+			} else {
+				vm.push(valTrue)
+			}
 
 		case compiler.OP_EQ:
 			b := vm.pop()
 			a := vm.pop()
-			vm.push(&BoolValue{Val: ValuesEqual(a, b)})
+			if ValuesEqual(a, b) {
+				vm.push(valTrue)
+			} else {
+				vm.push(valFalse)
+			}
 
 		case compiler.OP_NEQ:
 			b := vm.pop()
 			a := vm.pop()
-			vm.push(&BoolValue{Val: !ValuesEqual(a, b)})
+			if ValuesEqual(a, b) {
+				vm.push(valFalse)
+			} else {
+				vm.push(valTrue)
+			}
 
 		case compiler.OP_LT, compiler.OP_GT, compiler.OP_LTE, compiler.OP_GTE:
 			b := vm.pop()
 			a := vm.pop()
+			// Inline fast path for int-int comparison
+			if ai, ok := a.(*IntValue); ok {
+				if bi, ok := b.(*IntValue); ok {
+					var r bool
+					switch op {
+					case compiler.OP_LT:
+						r = ai.Val < bi.Val
+					case compiler.OP_GT:
+						r = ai.Val > bi.Val
+					case compiler.OP_LTE:
+						r = ai.Val <= bi.Val
+					case compiler.OP_GTE:
+						r = ai.Val >= bi.Val
+					}
+					if r {
+						vm.push(valTrue)
+					} else {
+						vm.push(valFalse)
+					}
+					continue
+				}
+			}
 			result, err := vm.opCompare(a, b, op)
 			if err != nil {
+				syncFrame()
 				return err
 			}
 			vm.push(result)
 
 		case compiler.OP_JUMP:
-			offset := vm.readUint16()
-			vm.frame().ip += offset
+			offset := readUint16()
+			ip += offset
 
 		case compiler.OP_JUMP_IF_FALSE:
-			offset := vm.readUint16()
+			offset := readUint16()
 			v := vm.pop()
 			if !IsTruthy(v) {
-				vm.frame().ip += offset
+				ip += offset
 			}
 
 		case compiler.OP_LOOP:
-			offset := vm.readUint16()
-			vm.frame().ip -= offset
+			offset := readUint16()
+			ip -= offset
 
 		case compiler.OP_LOAD_LOCAL:
-			slot := int(vm.readByte())
-			vm.push(vm.stack[vm.frame().basePtr+slot])
+			slot := int(readByte())
+			vm.push(vm.stack[bp+slot])
 
 		case compiler.OP_STORE_LOCAL:
-			slot := int(vm.readByte())
-			vm.stack[vm.frame().basePtr+slot] = vm.peek(0)
+			slot := int(readByte())
+			vm.stack[bp+slot] = vm.peek(0)
 			vm.pop()
 
 		case compiler.OP_LOAD_GLOBAL:
-			idx := vm.readUint16()
-			name := vm.getConstant(idx).(string)
+			idx := readUint16()
+			name := consts[idx].(string)
 			val, ok := vm.globals[name]
 			if !ok {
 				if vm.imported[name] {
@@ -394,38 +518,40 @@ func (vm *VM) execute() error {
 				}
 				// friendly hint for common modules
 			if name == "console" || name == "math" || name == "random" || name == "json" || name == "fs" {
-				return vm.runtimeError("undefined variable '%s' -- did you forget 'import %s'?", name, name)
+				return rtError("undefined variable '%s' -- did you forget 'import %s'?", name, name)
 			}
-			return vm.runtimeError("undefined variable '%s'", name)
+			return rtError("undefined variable '%s'", name)
 			}
 			vm.push(val)
 
 		case compiler.OP_STORE_GLOBAL:
-			idx := vm.readUint16()
-			name := vm.getConstant(idx).(string)
+			idx := readUint16()
+			name := consts[idx].(string)
 			if vm.constants[name] {
 				vm.pop() // discard the value
-				return vm.runtimeError("cannot reassign constant '%s'", name)
+				return rtError("cannot reassign constant '%s'", name)
 			}
 			vm.globals[name] = vm.pop()
 
 		case compiler.OP_MARK_CONST:
-			idx := vm.readUint16()
-			name := vm.getConstant(idx).(string)
+			idx := readUint16()
+			name := consts[idx].(string)
 			vm.constants[name] = true
 
 		case compiler.OP_CALL:
-			argCount := int(vm.readByte())
+			argCount := int(readByte())
 			callee := vm.stack[vm.sp-1-argCount]
+			syncFrame()
 			if err := vm.callValue(callee, argCount); err != nil {
 				return err
 			}
+			loadFrame()
 
 		case compiler.OP_CALL_KW:
-			posCount := int(vm.readByte())
-			namedCount := int(vm.readByte())
-			namesIdx := vm.readUint16()
-			names := vm.getConstant(namesIdx).([]string)
+			posCount := int(readByte())
+			namedCount := int(readByte())
+			namesIdx := readUint16()
+			names := consts[namesIdx].([]string)
 
 			// pop named arg values (in order)
 			namedValues := make([]Value, namedCount)
@@ -442,7 +568,7 @@ func (vm *VM) execute() error {
 			// resolve the function to get param names
 			funcVal, ok := callee.(*FuncValue)
 			if !ok {
-				return vm.runtimeError("keyword arguments are only supported on user-defined functions")
+				return rtError("keyword arguments are only supported on user-defined functions")
 			}
 			paramNames := funcVal.Obj.ParamNames
 			maxArity := funcVal.Obj.MaxArity
@@ -462,7 +588,7 @@ func (vm *VM) execute() error {
 				for j, pn := range paramNames {
 					if pn == name {
 						if fullArgs[j] != nil {
-							return vm.runtimeError("duplicate argument for parameter '%s'", name)
+							return rtError("duplicate argument for parameter '%s'", name)
 						}
 						fullArgs[j] = namedValues[i]
 						found = true
@@ -470,7 +596,7 @@ func (vm *VM) execute() error {
 					}
 				}
 				if !found {
-					return vm.runtimeError("unknown keyword argument '%s'", name)
+					return rtError("unknown keyword argument '%s'", name)
 				}
 			}
 			// fill defaults for any remaining nil slots
@@ -481,7 +607,7 @@ func (vm *VM) execute() error {
 					} else if i >= funcVal.Obj.Arity {
 						fullArgs[i] = &NilValue{}
 					} else {
-						return vm.runtimeError("missing required argument '%s'", paramNames[i])
+						return rtError("missing required argument '%s'", paramNames[i])
 					}
 				}
 			}
@@ -494,19 +620,26 @@ func (vm *VM) execute() error {
 			}
 			totalArgs := len(fullArgs)
 			calleeOnStack := vm.stack[vm.sp-1-totalArgs]
+			syncFrame()
 			if err := vm.callValue(calleeOnStack, totalArgs); err != nil {
 				return err
 			}
+			loadFrame()
 
 		case compiler.OP_RETURN:
 			result := vm.pop()
-			frame := vm.frame()
-			isInit := frame.isInit
-			instance := frame.instance
-			vm.sp = frame.basePtr
+			isInit := f.isInit
+			instance := f.instance
+			vm.sp = f.basePtr
 			vm.fp--
 			vm.frames = vm.frames[:vm.fp]
-			if vm.fp == 0 {
+			if vm.fp <= stopFP {
+				// Push the return value so CallFunc can retrieve it
+				if isInit {
+					vm.push(instance)
+				} else {
+					vm.push(result)
+				}
 				return nil
 			}
 			if isInit {
@@ -514,9 +647,10 @@ func (vm *VM) execute() error {
 			} else {
 				vm.push(result)
 			}
+			loadFrame()
 
 		case compiler.OP_LIST_NEW:
-			count := vm.readUint16()
+			count := readUint16()
 			elements := make([]Value, count)
 			for i := count - 1; i >= 0; i-- {
 				elements[i] = vm.pop()
@@ -524,7 +658,7 @@ func (vm *VM) execute() error {
 			vm.push(&ListValue{Elements: elements})
 
 		case compiler.OP_ARRAY_NEW:
-			count := vm.readUint16()
+			count := readUint16()
 			elements := make([]Value, count)
 			for i := count - 1; i >= 0; i-- {
 				elements[i] = vm.pop()
@@ -549,9 +683,9 @@ func (vm *VM) execute() error {
 			}
 
 		case compiler.OP_METHOD_CALL:
-			methodIdx := vm.readUint16()
-			argCount := int(vm.readByte())
-			methodName := vm.frame().function.Constants[methodIdx].(string)
+			methodIdx := readUint16()
+			argCount := int(readByte())
+			methodName := consts[methodIdx].(string)
 			// object is below the args on the stack
 			object := vm.stack[vm.sp-1-argCount]
 
@@ -579,12 +713,14 @@ func (vm *VM) execute() error {
 
 					newBase := instancePos
 
+					syncFrame()
 					vm.frames = append(vm.frames, CallFrame{
 						function: fn,
 						ip:       0,
 						basePtr:  newBase,
 					})
 					vm.fp = len(vm.frames)
+					loadFrame()
 					continue
 				}
 
@@ -614,21 +750,35 @@ func (vm *VM) execute() error {
 			vm.push(result)
 
 		case compiler.OP_IMPORT:
-			idx := vm.readUint16()
-			moduleName := vm.getConstant(idx).(string)
+			idx := readUint16()
+			moduleName := consts[idx].(string)
 			if _, ok := vm.modules[moduleName]; !ok {
-				return vm.runtimeError("unknown module '%s'", moduleName)
+				return rtError("unknown module '%s'", moduleName)
 			}
 			vm.imported[moduleName] = true
 
-		case compiler.OP_FROM_IMPORT:
-			moduleIdx := vm.readUint16()
-			namesIdx := vm.readUint16()
-			moduleName := vm.getConstant(moduleIdx).(string)
-			names := vm.getConstant(namesIdx).([]string)
+		case compiler.OP_IMPORT_AS:
+			moduleIdx := readUint16()
+			aliasIdx := readUint16()
+			moduleName := consts[moduleIdx].(string)
+			alias := consts[aliasIdx].(string)
 			mod, ok := vm.modules[moduleName]
 			if !ok {
-				return vm.runtimeError("unknown module '%s'", moduleName)
+				return rtError("unknown module '%s'", moduleName)
+			}
+			vm.imported[moduleName] = true
+			// Store the module under the alias name so it can be accessed as alias.method()
+			vm.globals[alias] = mod
+			vm.imported[alias] = true
+
+		case compiler.OP_FROM_IMPORT:
+			moduleIdx := readUint16()
+			namesIdx := readUint16()
+			moduleName := consts[moduleIdx].(string)
+			names := consts[namesIdx].([]string)
+			mod, ok := vm.modules[moduleName]
+			if !ok {
+				return rtError("unknown module '%s'", moduleName)
 			}
 			vm.imported[moduleName] = true
 			if len(names) == 1 && names[0] == "*" {
@@ -649,27 +799,28 @@ func (vm *VM) execute() error {
 						if val, ok := mod.Properties[name]; ok {
 							vm.globals[name] = val
 						} else {
-							return vm.runtimeError("module '%s' has no member '%s'", moduleName, name)
+							return rtError("module '%s' has no member '%s'", moduleName, name)
 						}
 					} else {
-						return vm.runtimeError("module '%s' has no member '%s'", moduleName, name)
+						return rtError("module '%s' has no member '%s'", moduleName, name)
 					}
 				}
 			}
 
 		case compiler.OP_IMPORT_FILE:
-			idx := vm.readUint16()
-			filePath := vm.getConstant(idx).(string)
+			idx := readUint16()
+			filePath := consts[idx].(string)
 			if !vm.importedFiles[filePath] {
 				vm.importedFiles[filePath] = true
 				if vm.FileLoader == nil {
-					return vm.runtimeError("file imports are not supported in this context")
+					return rtError("file imports are not supported in this context")
 				}
 				fn, err := vm.FileLoader(filePath)
 				if err != nil {
-					return vm.runtimeError("import '%s': %s", filePath, err.Error())
+					return rtError("import '%s': %s", filePath, err.Error())
 				}
 				// Save frame state, run imported file, restore
+				syncFrame()
 				savedFP := vm.fp
 				savedFrames := len(vm.frames)
 				vm.frames = append(vm.frames, CallFrame{
@@ -678,22 +829,23 @@ func (vm *VM) execute() error {
 					basePtr:  vm.sp,
 				})
 				vm.fp = len(vm.frames)
-				if err := vm.execute(); err != nil {
+				if err := vm.execute(savedFP); err != nil {
 					return err
 				}
 				vm.frames = vm.frames[:savedFrames]
 				vm.fp = savedFP
+				loadFrame()
 			}
 
 		case compiler.OP_GET_FIELD:
-			idx := vm.readUint16()
-			fieldName := vm.getConstant(idx).(string)
+			idx := readUint16()
+			fieldName := consts[idx].(string)
 			object := vm.pop()
 			switch obj := object.(type) {
 			case *InstanceValue:
 				val, exists := obj.Fields[fieldName]
 				if !exists {
-					return vm.runtimeError("instance of '%s' has no field '%s'", obj.Class.Name, fieldName)
+					return rtError("instance of '%s' has no field '%s'", obj.Class.Name, fieldName)
 				}
 				vm.push(val)
 			case *ModuleValue:
@@ -703,19 +855,19 @@ func (vm *VM) execute() error {
 						break
 					}
 				}
-				return vm.runtimeError("module '%s' has no property '%s'", obj.Name, fieldName)
+				return rtError("module '%s' has no property '%s'", obj.Name, fieldName)
 			default:
-				return vm.runtimeError("cannot access field '%s' on %s", fieldName, object.String())
+				return rtError("cannot access field '%s' on %s", fieldName, object.String())
 			}
 
 		case compiler.OP_SET_FIELD:
-			idx := vm.readUint16()
-			fieldName := vm.getConstant(idx).(string)
+			idx := readUint16()
+			fieldName := consts[idx].(string)
 			value := vm.pop()
 			object := vm.pop()
 			inst, ok := object.(*InstanceValue)
 			if !ok {
-				return vm.runtimeError("cannot set field '%s' on %s", fieldName, object.String())
+				return rtError("cannot set field '%s' on %s", fieldName, object.String())
 			}
 			inst.Fields[fieldName] = value
 
@@ -724,11 +876,11 @@ func (vm *VM) execute() error {
 			classDefVal := vm.pop()
 			superClass, ok := superVal.(*ClassValue)
 			if !ok {
-				return vm.runtimeError("superclass must be a class")
+				return rtError("superclass must be a class")
 			}
 			classDef, ok := classDefVal.(*ClassValue)
 			if !ok {
-				return vm.runtimeError("expected class for inheritance")
+				return rtError("expected class for inheritance")
 			}
 			classDef.Super = superClass
 			// copy parent fields not already defined
@@ -746,7 +898,7 @@ func (vm *VM) execute() error {
 			vm.push(classDef)
 
 		case compiler.OP_DICT_NEW:
-			count := vm.readUint16()
+			count := readUint16()
 			entries := make(map[string]Value)
 			order := make([]string, count)
 			// stack has: key0, val0, key1, val1, ... (count pairs)
@@ -757,7 +909,7 @@ func (vm *VM) execute() error {
 			for i := 0; i < count; i++ {
 				key, ok := items[i*2].(*StringValue)
 				if !ok {
-					return vm.runtimeError("dict key must be a string, got %s", items[i*2].String())
+					return rtError("dict key must be a string, got %s", items[i*2].String())
 				}
 				order[i] = key.Val
 				entries[key.Val] = items[i*2+1]
@@ -765,13 +917,12 @@ func (vm *VM) execute() error {
 			vm.push(&DictValue{Entries: entries, Order: order})
 
 		case compiler.OP_TRY_BEGIN:
-			offset := vm.readUint16()
-			f := vm.frame()
+			offset := readUint16()
 			vm.handlers = append(vm.handlers, ExceptionHandler{
-				CatchIP:  f.ip + offset,
+				CatchIP:  ip + offset,
 				FramePtr: vm.fp,
 				StackPtr: vm.sp,
-				BasePtr:  f.basePtr,
+				BasePtr:  bp,
 				FuncObj:  f.function,
 			})
 
@@ -782,12 +933,14 @@ func (vm *VM) execute() error {
 
 		case compiler.OP_THROW:
 			thrown := vm.pop()
+			syncFrame()
 			if err := vm.throwValue(thrown); err != nil {
 				return err
 			}
+			loadFrame()
 
 		default:
-			return vm.runtimeError("unknown opcode %d", op)
+			return rtError("unknown opcode %d", op)
 		}
 	}
 }
@@ -795,7 +948,7 @@ func (vm *VM) execute() error {
 func (vm *VM) wrapConstant(c interface{}) Value {
 	switch v := c.(type) {
 	case int64:
-		return &IntValue{Val: v}
+		return cachedInt(v)
 	case *big.Int:
 		return &SintValue{Val: v}
 	case float64:
@@ -804,15 +957,15 @@ func (vm *VM) wrapConstant(c interface{}) Value {
 		return &StringValue{Val: v}
 	case bool:
 		if v {
-			return &BoolValue{Val: true}
+			return valTrue
 		}
-		return &BoolValue{Val: false}
+		return valFalse
 	case *compiler.FuncObject:
 		return &FuncValue{Obj: v}
 	case *compiler.ClassDef:
 		return vm.wrapClassDef(v)
 	default:
-		return &NilValue{}
+		return valNil
 	}
 }
 
@@ -983,7 +1136,7 @@ func (vm *VM) opAdd(a, b Value) (Value, error) {
 			if addOverflows(av.Val, bv.Val) {
 				return nil, vm.runtimeError("integer overflow")
 			}
-			return &IntValue{Val: av.Val + bv.Val}, nil
+			return cachedInt(av.Val + bv.Val), nil
 		case *FloatValue:
 			return &FloatValue{Val: float64(av.Val) + bv.Val}, nil
 		}
@@ -1037,12 +1190,12 @@ func (vm *VM) opArith(a, b Value, op string) (Value, error) {
 				if subOverflows(av.Val, bv.Val) {
 					return nil, vm.runtimeError("integer overflow")
 				}
-				return &IntValue{Val: av.Val - bv.Val}, nil
+				return cachedInt(av.Val - bv.Val), nil
 			case "*":
 				if mulOverflows(av.Val, bv.Val) {
 					return nil, vm.runtimeError("integer overflow")
 				}
-				return &IntValue{Val: av.Val * bv.Val}, nil
+				return cachedInt(av.Val * bv.Val), nil
 			}
 		case *FloatValue:
 			af := float64(av.Val)
@@ -1148,6 +1301,27 @@ func (vm *VM) opMod(a, b Value) (Value, error) {
 }
 
 func (vm *VM) opCompare(a, b Value, op compiler.OpCode) (*BoolValue, error) {
+	// Fast path: int-int comparison (most common case)
+	if ai, ok := a.(*IntValue); ok {
+		if bi, ok := b.(*IntValue); ok {
+			var result bool
+			switch op {
+			case compiler.OP_LT:
+				result = ai.Val < bi.Val
+			case compiler.OP_GT:
+				result = ai.Val > bi.Val
+			case compiler.OP_LTE:
+				result = ai.Val <= bi.Val
+			case compiler.OP_GTE:
+				result = ai.Val >= bi.Val
+			}
+			if result {
+				return valTrue, nil
+			}
+			return valFalse, nil
+		}
+	}
+
 	// sint comparison
 	ab, bb := toBigInt(a), toBigInt(b)
 	_, aIsSint := a.(*SintValue)
@@ -1165,7 +1339,10 @@ func (vm *VM) opCompare(a, b Value, op compiler.OpCode) (*BoolValue, error) {
 		case compiler.OP_GTE:
 			result = cmp >= 0
 		}
-		return &BoolValue{Val: result}, nil
+		if result {
+			return valTrue, nil
+		}
+		return valFalse, nil
 	}
 
 	var af, bf float64
@@ -1197,7 +1374,10 @@ func (vm *VM) opCompare(a, b Value, op compiler.OpCode) (*BoolValue, error) {
 	case compiler.OP_GTE:
 		result = af >= bf
 	}
-	return &BoolValue{Val: result}, nil
+	if result {
+		return valTrue, nil
+	}
+	return valFalse, nil
 }
 
 func (vm *VM) indexGet(object, index Value) (Value, error) {

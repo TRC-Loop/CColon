@@ -16,6 +16,21 @@ console.println("Hello!")
 
 Import statements should be placed at the top of the file, before any function definitions or other code.
 
+## Import aliases
+
+Use `as` to give an imported module a different name:
+
+```
+import math as m
+
+function main() {
+    console.println(m.sqrt(16).tostring())  // 4
+    console.println(m.pi)                   // 3.141592653589793
+}
+```
+
+This is useful for shortening long module names or avoiding naming conflicts.
+
 ## Selective imports
 
 Use `from ... import` to import specific functions or properties from a module:

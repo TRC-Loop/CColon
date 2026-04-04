@@ -182,10 +182,16 @@ func (c *Compiler) compileImport(s *parser.ImportStmt) error {
 	idx := c.addConstant(s.Module)
 	if s.IsFile {
 		c.emitOp(OP_IMPORT_FILE, s.P.Line)
+		c.emitUint16(idx, s.P.Line)
+	} else if s.Alias != "" {
+		aliasIdx := c.addConstant(s.Alias)
+		c.emitOp(OP_IMPORT_AS, s.P.Line)
+		c.emitUint16(idx, s.P.Line)
+		c.emitUint16(aliasIdx, s.P.Line)
 	} else {
 		c.emitOp(OP_IMPORT, s.P.Line)
+		c.emitUint16(idx, s.P.Line)
 	}
-	c.emitUint16(idx, s.P.Line)
 	return nil
 }
 

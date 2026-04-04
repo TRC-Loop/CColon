@@ -265,6 +265,7 @@ type FuncDecl struct {
 
 type ImportStmt struct {
 	Module string
+	Alias  string // empty means no alias
 	IsFile bool
 	P      Position
 }

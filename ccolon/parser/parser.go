@@ -153,7 +153,19 @@ func (p *Parser) parseImport() (*ImportStmt, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &ImportStmt{Module: name.Literal, P: Position{tok.Line, tok.Col}}, nil
+
+	// import <module> as <alias>
+	var alias string
+	if p.current().Type == lexer.TOKEN_AS {
+		p.advance() // consume 'as'
+		aliasTok, err := p.expect(lexer.TOKEN_IDENT)
+		if err != nil {
+			return nil, err
+		}
+		alias = aliasTok.Literal
+	}
+
+	return &ImportStmt{Module: name.Literal, Alias: alias, P: Position{tok.Line, tok.Col}}, nil
 }
 
 func (p *Parser) parseFromImport() (*FromImportStmt, error) {
