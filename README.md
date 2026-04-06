@@ -87,6 +87,11 @@ function main() {
 }
 ```
 
+### LSP
+
+Find LSP Instructions here:
+https://github.com/TRC-Loop/ccl-lsp
+
 ## Features
 
 | Feature | Description |
